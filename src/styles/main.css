@@ -48,6 +48,8 @@
   --chart-5: #7a6bb5;
   --radius: 0.125rem;
   --font-sans: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  /* 地球外圈大气层发光：亮色极淡，暗色荧光青蓝 */
+  --globe-glow: rgb(100 160 255 / 0.18);
 }
 
 /* ===== blueprint 主题 · 晒图蓝（dark）设计令牌 ===== */
@@ -88,6 +90,7 @@
   --chart-3: #ffb000;
   --chart-4: #ff8f86;
   --chart-5: #b8a8f0;
+  --globe-glow: rgb(0 240 255 / 0.45);
 }
 
 @theme inline {

@@ -157,14 +157,16 @@ const cobeLabels = computed(() => regionClusters.value.map(cluster => ({
 
 const themeColors = computed(() => {
   if (appStore.isDark) {
+    // 暗色（晒图蓝纸面）：深高科技蓝球体 + 荧光青蓝点阵，与背景拉开亮度阶梯
     return {
       dark: 1,
-      mapBrightness: 8,
-      baseColor: [0.95, 0.95, 0.98] as [number, number, number],
-      markerColor: [0.18, 0.78, 1.0] as [number, number, number],
-      glowColor: [0.78, 0.90, 1.0] as [number, number, number],
+      mapBrightness: 11,
+      baseColor: [0.04, 0.10, 0.20] as [number, number, number], // ≈ #0A1933 深高科技蓝
+      markerColor: [0.0, 0.94, 1.0] as [number, number, number], // #00F0FF 荧光青蓝
+      glowColor: [0.0, 0.85, 1.0] as [number, number, number], // 青蓝球面散射
     }
   }
+  // 亮色（白图）：保持"白球 + 墨蓝点阵"，视觉已协调，不动
   return {
     dark: 0,
     mapBrightness: 10,
@@ -404,6 +406,7 @@ function onPointerUp(e: PointerEvent) {
 <style scoped>
 .earth-globe-canvas {
   contain: layout paint;
-  filter: blur(0.5px); /* 轻微模糊柔化点阵，进一步抑制旋转时的摩尔纹 */
+  /* 轻微模糊柔化点阵 + 球体外圈环形发光（亮/暗由 --globe-glow 变量驱动） */
+  filter: blur(0.5px) drop-shadow(0 0 22px var(--globe-glow));
 }
 </style>
