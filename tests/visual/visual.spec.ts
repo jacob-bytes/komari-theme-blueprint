@@ -257,3 +257,33 @@ test('detail ping tasks follow the backend task order', async ({ page }) => {
   await expect(taskCards.nth(2)).toHaveAttribute('data-ping-task-id', '20')
   await expect(taskCards).toContainText(['浙江移动', '浙江联通', '浙江电信'])
 })
+
+test('blueprint view renders master ga and schedule', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await installKomariFixture(page, { hideEarth: true })
+  await openStablePage(page)
+
+  await page.getByRole('button', { name: '显示首页工具' }).click()
+  await page.getByRole('button', { name: /蓝图/ }).click()
+  await expect(page.getByText('基础设施蓝图')).toBeVisible()
+  await expect(page.getByText('拓扑总图')).toBeVisible()
+  await expect(page.getByText('总线 · komari-core')).toBeVisible()
+  await expect(page.getByText('设备表')).toBeVisible()
+  await expect(page.getByText('节点明细图')).toBeVisible()
+  await expect(page).toHaveScreenshot('blueprint-home.png', { fullPage: false })
+})
+
+test('blueprint detail sheet expands with nameplate', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await installKomariFixture(page, { hideEarth: true })
+  await openStablePage(page)
+
+  await page.getByRole('button', { name: '显示首页工具' }).click()
+  await page.getByRole('button', { name: /蓝图/ }).click()
+  await expect(page.getByText('基础设施蓝图')).toBeVisible()
+
+  const row = page.locator('table.bp-sched tbody tr').first()
+  await row.click()
+  await expect(page.locator('.bp-nplate').first()).toBeVisible()
+  await expect(page.locator('.bp-nplate').first()).toContainText('系统')
+})
