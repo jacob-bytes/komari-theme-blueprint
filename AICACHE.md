@@ -90,6 +90,12 @@
 
 ## 执行日志
 
+### 2026-08-26 目录调整与 README 重写
+
+- **项目目录调整**：把项目从 `repo-analysis/` 子目录移动到仓库根目录 `/Users/jlthzy/Documents/kmemos/komari-theme/`。方式：合并 `repo-analysis/docs/` → 根 `docs/`（superpowers 计划保留），rsync 项目文件（含 `.git`、排除 docs/node_modules/dist/产物）到根，mv node_modules，删除 `repo-analysis/`。根目录即 git 仓库（HEAD 0468dd9），构建验证通过（zip `blueprint-build-0468dd9.zip`）。
+- **README 重写**：移除 v3.x Glassmorphism 历史 changelog（v3.3.7-v3.1.2）与旧更新日志；blueprint 保留为当前项目（定位/蓝图视图/首页/工具/详情/Metric/Ping/架构/安全/兼容/设置/安装/开发/更新日志）；致谢增加 Glassmorphism 相关内容（延续自 komari-theme-Glassmorphism 的提及）；GitHub 仓库 URL 保留（远程仓库实际未改名，改 URL 会 404）。
+- 注意：`docs/superpowers/`、`prototypes/` 为非 git 跟踪的本地文件（原型与开发计划），未提交；远程仓库名仍为 komari-theme-Glassmorphism（如需彻底改名需在 GitHub 重命名仓库并同步 README URL）。内部开发文档（AGENTS.md/CLAUDE.md/AIAGENTREADME.md）仍含旧名 "komari-theme-Glassmorphism"，未同步（用户仅要求 README）。
+
 ### 2026-08-26 blueprint v0.0.11 概览卡片背景修复
 
 - 用户反馈：顶部概览板块 6 个指标卡（内存用量、剩余价值、实时上行、硬盘用量、累计流量、实时下行）无白色背景框。
