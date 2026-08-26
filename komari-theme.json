@@ -3,8 +3,8 @@
   "short": "blueprint",
   "description": "A Blueprint theme for Komari",
   "version": "0.0.11",
-  "author": "sanrokamlan",
-  "url": "https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism",
+  "author": "jacob-bytes",
+  "url": "https://github.com/jacob-bytes/komari-theme-blueprint",
   "preview": "preview.png",
   "configuration": {
     "type": "managed",

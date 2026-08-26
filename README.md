@@ -6,14 +6,14 @@
 
 把节点监控渲染成工程图纸式的拓扑总图、分区图与设备表。
 
-![Version](https://img.shields.io/github/v/release/sanrokamlan-prog/komari-theme-Glassmorphism?style=for-the-badge&label=release&color=10b981)
+![Version](https://img.shields.io/github/v/release/jacob-bytes/komari-theme-blueprint?style=for-the-badge&label=release&color=10b981)
 ![Vue](https://img.shields.io/badge/Vue-3-42b883?style=for-the-badge&logo=vue.js)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=for-the-badge&logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8?style=for-the-badge&logo=tailwindcss)
 ![Bun](https://img.shields.io/badge/Bun-%3E%3D1.2-000000?style=for-the-badge&logo=bun)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
 
-**[📥 下载 Release](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)** ·
+**[📥 下载 Release](https://github.com/jacob-bytes/komari-theme-blueprint/releases)** ·
 **[🚀 安装](#-安装--升级)** ·
 **[✨ 功能](#🗺️-蓝图视图)** ·
 **[⚙️ 设置](#️-主题设置)** ·
@@ -231,12 +231,12 @@ API / RPC
 Komari 后台支持直接填写仓库地址并拉取最新 Release：
 
 ```text
-https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism
+https://github.com/jacob-bytes/komari-theme-blueprint
 ```
 
 ### 方式二：手动安装 Release
 
-1. 打开 [Releases](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)
+1. 打开 [Releases](https://github.com/jacob-bytes/komari-theme-blueprint/releases)
 2. 下载最新的 `blueprint-build-*.zip`
 3. 登录 Komari Monitor 后台，进入 **设置 → 主题管理**
 4. 上传 zip 并启用主题
