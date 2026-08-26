@@ -7,10 +7,26 @@
 - 开始多文件、架构、安全、发布、迁移类任务前，先新增或更新“当前任务”。
 - 开发中按时间追加“执行日志”。
 - 结束前必须更新“验证记录”和“交接说明”。
+- **每次更新后必须 bump `komari-theme.json` 的 `version`（用户上传新 zip 直接覆盖安装），并重新 `bun run build` 打包**，同时在 README 同步当前版本。
 - 不要写入密钥、token、cookie、服务器密码、私有用户数据。
 - 如果记录过期，直接标注“已完成/已废弃”，不要让后续 AI 误判。
 
 ## 当前任务
+
+- 状态：done，blueprint 主题彻底改造完成(未发版，待用户确认后再决定是否发版)
+- 目标：把 komari-theme-Glassmorphism 从毛玻璃主题彻底改造成 blueprint（工程蓝图）主题并命名为 blueprint。
+- 里程碑：M4 UI/UX 大改造 + 发布契约改名。
+- 实现：
+  - 全局令牌蓝图化：main.css 的 :root/.dark token 从毛玻璃 oklch 换成白图(#f6f8fb)/晒图蓝(#143d72)蓝图配色，移除全部 backdrop-filter（含 Tailwind backdrop-blur 工具类），body 纸样网格背景，JetBrains Mono/Oswald 等宽字体。
+  - 首页蓝图化：HomeView 默认 activeHomeTool='blueprint'（蓝图图纸为主视图），移除 NodeGeneralCards（地球+总览卡片），homeAdvancedToolsVisible 默认 true（工具切换栏默认展开），节点卡片/列表降级为「节点」工具视图。
+  - 详情页通过全局 token 蓝图化（纸样卡片），保留 Metric 图表与 Ping 功能。
+  - Background.vue 默认背景从毛玻璃 webp 改为蓝图纸样网格。
+  - 移除地球：删除 NodeEarthGlobe/CobeGlobe/RealisticGlobe/TiledMap、NodeGeneralCards、useNodeGeoClusters 共 6 个文件；删除 public/images/earth/ 纹理(2.98MB)；移除 cobe/globe.gl/three/@types/three 依赖；vite manualChunks 移除 globe。
+  - 改名：komari-theme.json name/short→blueprint、package.json name→blueprint、Footer 文案、zip 前缀 blueprint-build-、GitHub workflow glob、README 标题、fixture theme→blueprint。
+  - komari-theme.json 配置精简：移除地球样式(earthRenderer/stopEarth/hideEarth)、隐藏头部、毛玻璃配色(glassColorPreset/glassCustomColors)、总览卡片(generalCardPreset/generalCardKeys)，配置项 48→47，编号顺延重排。
+- 验证：bun run lint、bun run build(type-check+vite+zip) 通过；视觉回归重写为 11 条用例（蓝图首页亮/暗、明细展开铭牌、节点视图卡片/mini、详情页 6 条），全部通过；修复了 detail ping 作用域用例的 RequestManager 并发排队时序问题（等 12 个 queryMetrics 全部发出后再清空）。
+- 产物：blueprint-build-e065dc7.zip（3.93 MB，从 7.25 MB 减少 46%），顶层契约 komari-theme.json/preview.png/dist/，包内 name=blueprint，753 个 dist 条目，无地球/globe 残留 chunk。
+- 交接：版本号仍是 3.3.7；远程 GitHub 仓库仍叫 komari-theme-Glassmorphism（本地改名不影响远程，需另建/改名仓库）；如需发版需 bump 版本并推送。
 
 - 状态：done，蓝图视图新增完成(未发布版本，待用户确认后再决定是否发版)
 - 目标：新增「蓝图」工程图纸式首页工具 Tab,把节点监控渲染为拓扑总图 / 分区图 / 设备表 / 节点明细图一整套图纸。
@@ -73,6 +89,98 @@
 - 不做：不把 Glassmorphism 默认主题替换混入计费 PR #604；不发布测试构建为正式 Release；不构建 Windows 包。
 
 ## 执行日志
+
+### 2026-08-26 blueprint v0.0.11 概览卡片背景修复
+
+- 用户反馈：顶部概览板块 6 个指标卡（内存用量、剩余价值、实时上行、硬盘用量、累计流量、实时下行）无白色背景框。
+- 根因：`NodeGeneralCards` 的 `cardClass` 仍是毛玻璃时代的 `bg-background/50 border-none`（半透明+无边框），蓝图主题下不可见。
+- 修复：`cardClass` → `bg-card border-border hover:bg-secondary transition-all`（与详情页/图表卡一致）。至此全站残余的「半透明无框」卡片样式已清理完毕（首页概览/节点卡/详情指标卡/图表卡/延迟模块全部 bg-card+border）。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（快照更新）；zip 内 version=0.0.11。
+
+### 2026-08-26 blueprint v0.0.10 两项修复
+
+- 用户反馈 2 项并全部修复（版本 0.0.9→0.0.10）：
+  1. 节点卡片跳转/切换瞬间 Ping 数据闪烁清空（延迟/丢包显示 '-'）：`useNodePingDisplay` 增加记忆逻辑——latency/loss 文字与渲染 bar 记忆最后一次有数据的值，enabled 变 false（路由跳转）时保留显示，不再降级为占位符。
+  2. 详情页延迟模块 UI 重构：PingChart 去除外层大卡（根 div 恢复 `flex flex-col gap-4`），指标卡片（任务统计卡）改为 `bg-card border border-border` 独立卡片化，折线图表容器改为 `bg-card border border-border` 独立卡片化。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（快照更新）；zip 内 version=0.0.10。
+
+### 2026-08-26 blueprint v0.0.9 两项修复
+
+- 用户反馈 2 项并全部修复（版本 0.0.8→0.0.9）：
+  1. 详情页监控图表无背景框：LoadChart.vue 7 处 CardX 与 PingChart.vue 根容器，`bg-background/50 border-none`（半透明无框）→ `bg-card border-border hover:bg-secondary transition-all rounded-md`（PingChart 根加 `rounded-md border border-border bg-card p-3`），与顶部板块一致。
+  2. 恢复原始 Glassmorphism 首页数据（概览卡片 + 点阵旋转地球）：从 git 恢复 NodeGeneralCards.vue / NodeEarthCobeGlobe.vue / useNodeGeoClusters.ts；NodeGeneralCards 固定渲染 NodeEarthCobeGlobe（点阵，不再走 realistic/tiled 选择）；package.json 恢复 cobe 依赖（bun install 更新 lock）；HomeView 仅节点视图（activeHomeTool==='nodes'）顶部渲染概览卡片+点阵地球，蓝图图纸视图不变。
+- 注意：恢复地球是用户最新要求（此前要求移除，现已改变主意；只恢复点阵 cobe，不恢复 realistic/tiled/earth 纹理）。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（nodes-card-desktop 快照更新）；zip 内 version=0.0.9。
+
+### 2026-08-26 blueprint v0.0.8 五项修复
+
+- 用户反馈 5 项并全部修复（版本 0.0.7→0.0.8）：
+  1. 分区图设备符号长文本截断与状态标记重叠：主机名 `fitText(tag, 18)` → `fitText(tag, 16)`，为右侧 ○/▲/✕ 留足空间。
+  2. 分区图点击设备符号不再跳转：`BlueprintSheet` 恢复 `onOpen`（监听 ZoneSheet/Schedule 的 @open），点击后 `scrollIntoView` 到设备表 `[data-host=uuid]` 行并加 `bp-focus` 高亮 1.8s（blueprint.css 新增亮/暗高亮样式）。
+  3. 详情页指标卡无背景框：`InstanceDetail.vue` 5 处 CardX 的 `bg-background/50 border-none`（半透明无框，蓝图下不可见）→ `bg-card border-border hover:bg-secondary`（纯色+边框），与硬件/系统等信息卡一致。
+  4. 删拓扑总图上方状态与线型图例：`BlueprintSheet.vue` 移除 `.bp-legend`（7 项）。
+  5. 田字格调整为原 60%：Background.vue 网格 0.028/0.055 → 0.033/0.06（dark 0.054），blueprint.css `--bp-grid`/`--bp-grid-major` 同步 0.033/0.06（dark 0.054）。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（快照更新）；zip 内 version=0.0.8。
+
+### 2026-08-26 blueprint v0.0.7 三项修复
+
+- 用户反馈 4 项，3 项修复 + 1 项排查（版本 0.0.6→0.0.7）：
+  1. console 报错 `initializeEarth`：全仓库（src/public/dist/index.html）grep 无此代码——非当前主题产生，判定为浏览器缓存的旧版本（旧 Glassmorphism 地球主题）或 Komari 核心页面；建议硬刷新（Cmd+Shift+R）。Cloudflare rum 404 与主题无关。
+  2. 搜索框交互异常：恢复 focus 展开——外层容器 `focus-within:!w-48/52` + Input `focus:!w-full`，点击放大镜展开输入框且不溢出视口。
+  3. 国旗与中文名基线对齐：分区符号 image y+7→y+9（中心 y+18），文字基线 y+25→y+23（中心 y+18.5），两元素视觉中心对齐。
+  4. 分区图折叠标题无中文名：h2 改为 `regionTitle(z.name)`（getRegionDisplayName 中文名，未命中回退原值），与总图一致显示"香港/美国"等。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（快照更新）；zip 内 version=0.0.7。
+
+### 2026-08-26 blueprint v0.0.6 四项调整
+
+- 用户反馈 4 项并全部修复（版本 0.0.5→0.0.6）：
+  1. 首页搜索框缩放才看全：去掉 Input 的 `focus:!w-52 sm:focus:!w-60` focus 强制展开（聚焦时不展开，仅输入后展开 w-60），避免右侧溢出。
+  2. 拓扑总图分区符号：左上角新增固定 26×18 `<image>` 国旗（`/images/flags/{ISO code}.svg`，经 regionHelper.getRegionCode 解析，仅合法 2 字母代码才显示，自定义地域不 404），右侧显示地域名（getRegionDisplayName 中文名，fitText 截断）；新增地域经 regionHelper 自动映射。
+  3. 分区图设备符号只显示主机名：去掉 CPU% 行（及已离线时间行），nodeH 46→34，框更扁。
+  4. 弱化田字格：Background.vue 页面网格 0.055/0.1 → 0.028/0.055（dark 0.045/0.09 → 0.028/0.05）；blueprint.css 图纸网格同值减半。
+- 验证：type-check、lint（正则提为模块级常量）、build、视觉回归 11 条全绿（快照更新）；zip 内 version=0.0.6。
+
+### 2026-08-26 blueprint v0.0.5 文本拉伸修复
+
+- 用户反馈拓扑总图/分区图"国旗飘了"（红色横条）。根因：v0.0.4 给 SVG `<text>` 加了 `textLength`（lengthAdjust="spacingAndGlyphs"），该属性是**强制**的——短文字（如 "BR-*" 仅 40px）被强行拉伸到框宽，变形似国旗横条。
+- 修复：`svg.ts` 新增 `fitText()`（宽度感知截断：中文/全角=2 单位，其他=1；超长才加 …）；BlueprintGa 分区名与 BlueprintZoneSheet 设备符号改为 fitText 截断，移除 textLength。短文字正常显示，长文字截断为 …（用户要求的"限宽承载 + 超长截断"），不再拉伸。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（快照更新）；zip 内 version=0.0.5。
+
+### 2026-08-26 blueprint v0.0.4 精简三项
+
+- 用户反馈 3 项并全部修复（版本 0.0.3→0.0.4）：
+  1. 拓扑总图分区符号信息冗余：去掉与分区名重复的 `prefixOf` 前缀副行和「● 在线数」（与台数重复），台数只显示一次，告警/离线数量按需追加；card 压扁 190×78→190×64。
+  2. 分区图设备符号排班怪异：去掉 host 备注副行（public_remark/remark），只显示主机名 + CPU%（离线时「已离线 · 时间」），textLength 强制长名不超框。
+  3. 首页工具精简：分析后移除与蓝图重叠的「拓扑」（NodeTopologyPanel，与蓝图拓扑总图重复）和「健康」（HealthSummaryPanel，与蓝图设备表/状态重复），保留 节点/对比/蓝图/性价比/导出/日志；删除两个组件文件与 HomeView 引用。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（快照更新）；zip 内 version=0.0.4。
+
+### 2026-08-26 blueprint v0.0.3 五项修复
+
+- 用户反馈 5 项并全部修复（版本 0.0.2→0.0.3）：
+  1. 首次访问默认折叠工具条：`stores/app.ts` 的 `homeAdvancedToolsVisible` 默认恢复 false（手动点 Header「显示首页工具」展开）。
+  2. 拓扑图蓝线穿插：根因是 blueprint.css 的 `fill: transparent` 覆盖了 BlueprintGa 内联 `fill="var(--bp-paper)"`（SVG 内联属性优先级低于 CSS 选择器）。改为 CSS 统一用 `fill: var(--bp-paper)`（hover 用 paper-deep），分区/设备符号遮蔽跳线。
+  3. 分区图告警不准确：`mapper.ts` 的 `deriveStatus` 误用 `n.ram`（字节，恒 ≥85 阈值），改为 `percent(n.ram, n.mem_total)` 百分比比较。
+  4. 设备表主机列显示 uuid 片段（commit 字符）：`mapper.ts` 的 host 改为 `n.public_remark || n.remark || '-'`，无备注不再显示 uuid.slice(0,8)。
+  5. 主机名长与 ▲ 重叠：`svg.ts` 的 `txt()` 增加可选 `textLength`（lengthAdjust="spacingAndGlyphs"），设备符号位号/副行强制不超框，中文长名不再溢出。
+  6. 移除「节点明细图」：删除 BlueprintDetail.vue/BlueprintDetails.vue（git rm）、BlueprintSheet 移除 DWG-03 section 与 focusUuid/onOpen，BlueprintTitleBlock 张次改为 `2 + zones`，蓝图工具描述改为「工程蓝图总图 · 分区 · 设备表」。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（快照更新；蓝图用例含「显示首页工具」展开步骤）；zip 内 version=0.0.3。
+
+### 2026-08-26 blueprint v0.0.2 视觉/布局修复
+
+- 用户反馈 4 项并全部修复（版本 0.0.1→0.0.2）：
+  1. 访客详情卡需缩放才可见：`VisitorInfo.vue` 左下角详情卡 `2xl:block` → `lg:block`（≥1024px 默认显示）。
+  2. 拓扑总图信息冗余 + 遮罩：重写 `BlueprintGa.vue` 为紧凑布局（分区符号 270×150→190×78，每行 4 个，去掉大 ×N 台/第 N 张等冗余），跳线先画后用纸色 `fill="var(--bp-paper)"` 分区符号遮蔽（stubs-first），消除遮罩。
+  3. 设备符号蓝色文字与橙色 ▲ 重叠：`BlueprintZoneSheet.vue` 副行截断 30→20 字符，避免与右侧 CPU% 文字重叠。
+  4. 明细图纸重复信息 + chart 不美观：`BlueprintDetail.vue` 删除 CPU/延迟 24h chart 及 useBlueprintHistory（该文件已 git rm），保留铭牌/参数行/尺寸线/页脚。
+- 验证：type-check、lint、build、视觉回归 11 条全绿（快照更新）；zip 内 version=0.0.2。
+
+### 2026-08-26 blueprint 设备表数据格式修复
+
+- 用户在真实后端验证 blueprint 主题：蓝图默认视图正常、节点卡片视图效果良好、但设备表 CPU/内存/硬盘列显示异常。
+- 根因：`mapper.ts` 的 `mapNode` 把 `NodeData.ram`/`disk`（字节数）直接当作百分比显示，`cpu` 未格式化，`fmtDiskText` 也错误地假设 `disk` 是百分比。
+- 修复：新增 `percent(used,total)`（字节→0-100 百分比）与 `round1`（1 位小数）；`mem`/`disk` 改为百分比换算，`cpu` 保留 1 位小数，`diskText` 改为字节直接换算 GiB；`BlueprintSchedule` 网络列新增 `fmtNet`（B/s→G/M/K 自适应单位）。
+- 用户明确：**不要**把蓝图改成独立默认主页，保持"蓝图作为首页工具且默认显示"的现状。已回退 HomeView 的结构改动（activeHomeTool 恢复默认 'blueprint'、homeTools 含 blueprint、渲染顺序恢复为 v-else-if）。
+- 验证：`bun run type-check`、`bun run lint`、`bun run build` 通过；视觉回归 11 条全绿（快照更新，蓝图设备表现显示百分比）。
 
 ### 2026-08-11 Ping task order parity
 

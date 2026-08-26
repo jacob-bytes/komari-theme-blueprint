@@ -180,17 +180,70 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background-image: url('/images/default-background-v2.webp');
-  background-position: center bottom;
-  background-repeat: no-repeat;
-  background-size: cover;
-  filter: saturate(1.12) contrast(1.02);
-  transform: scale(1.01);
-  transform-origin: center;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(120% 90% at 50% 0%, transparent 55%, var(--secondary) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgb(29 78 137 / 0.033) 0,
+      rgb(29 78 137 / 0.028) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgb(29 78 137 / 0.033) 0,
+      rgb(29 78 137 / 0.028) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgb(29 78 137 / 0.06) 0,
+      rgb(29 78 137 / 0.055) 1px,
+      transparent 1px,
+      transparent 60px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgb(29 78 137 / 0.06) 0,
+      rgb(29 78 137 / 0.055) 1px,
+      transparent 1px,
+      transparent 60px
+    );
 }
 
 .dark .default-background {
-  filter: brightness(0.38) saturate(0.82) contrast(1.08);
+  background-image:
+    radial-gradient(120% 90% at 50% 0%, transparent 55%, var(--secondary) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgb(233 242 255 / 0.033) 0,
+      rgb(233 242 255 / 0.028) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgb(233 242 255 / 0.033) 0,
+      rgb(233 242 255 / 0.028) 1px,
+      transparent 1px,
+      transparent 12px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgb(233 242 255 / 0.054) 0,
+      rgb(233 242 255 / 0.05) 1px,
+      transparent 1px,
+      transparent 60px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgb(233 242 255 / 0.054) 0,
+      rgb(233 242 255 / 0.05) 1px,
+      transparent 1px,
+      transparent 60px
+    );
 }
 
 @media (max-width: 768px) {

@@ -401,7 +401,7 @@ export async function installKomariFixture(page: Page, options: VisualFixtureOpt
         record_preserve_time: 720,
         ping_record_preserve_time: 720,
         sitename: 'Komari Visual Lab',
-        theme: 'Glassmorphism',
+        theme: 'blueprint',
         theme_settings: settings,
         visitor_audit_enabled: false,
       },

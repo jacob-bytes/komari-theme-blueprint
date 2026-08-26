@@ -3,10 +3,22 @@ import type { NodeData } from '@/stores/nodes'
 
 export const BLUEPRINT_WARN_THRESHOLD = 85
 
+/** 已用/总量 → 0-100 百分比（ram/disk 是字节字段，需换算）；总量无效时返回 0 */
+function percent(used: number | null | undefined, total: number | null | undefined): number {
+  if (!Number.isFinite(used) || !Number.isFinite(total) || (total ?? 0) <= 0)
+    return 0
+  return Math.min(100, Math.max(0, ((used ?? 0) / (total!)) * 100))
+}
+
+/** 四舍五入到 1 位小数 */
+function round1(v: number): number {
+  return Math.round(v * 10) / 10
+}
+
 function fmtDiskText(n: NodeData): string {
   const total = n.disk_total ?? 0
-  const used = (total * (n.disk ?? 0)) / 100
-  return `${(used / 1024 ** 3).toFixed(0)}/${(total / 1024 ** 3).toFixed(0)} GiB`
+  const used = n.disk ?? 0
+  return `${Math.round(used / 1024 ** 3)}/${Math.round(total / 1024 ** 3)} GiB`
 }
 
 function relativeLastSeen(iso?: string): string {
@@ -24,7 +36,8 @@ function relativeLastSeen(iso?: string): string {
 function deriveStatus(n: NodeData): BlueprintStatus {
   if (!n.online)
     return 'offline'
-  return (n.cpu >= BLUEPRINT_WARN_THRESHOLD || n.ram >= BLUEPRINT_WARN_THRESHOLD) ? 'warn' : 'ok'
+  // ram/disk 是字节字段，必须换算成百分比再与阈值比较
+  return (n.cpu >= BLUEPRINT_WARN_THRESHOLD || percent(n.ram, n.mem_total) >= BLUEPRINT_WARN_THRESHOLD) ? 'warn' : 'ok'
 }
 
 export function mapNode(n: NodeData, pingAvg?: number | null): BlueprintNode {
@@ -35,12 +48,12 @@ export function mapNode(n: NodeData, pingAvg?: number | null): BlueprintNode {
   return {
     uuid: n.uuid,
     tag: n.name,
-    host: n.remark || n.uuid.slice(0, 8),
+    host: n.public_remark || n.remark || '-',
     region: n.region || '未分区',
     group: n.group || null,
-    cpu: n.cpu ?? 0,
-    mem: n.ram ?? 0,
-    disk: n.disk ?? 0,
+    cpu: round1(n.cpu ?? 0),
+    mem: round1(percent(n.ram, n.mem_total)),
+    disk: round1(percent(n.disk, n.disk_total)),
     diskText: fmtDiskText(n),
     netIn: n.net_in ?? 0,
     netOut: n.net_out ?? 0,

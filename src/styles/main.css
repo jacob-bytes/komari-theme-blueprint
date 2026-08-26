@@ -8,84 +8,86 @@
   scrollbar-width: thin;
 }
 
+/* ===== blueprint 主题 · 白图（light）设计令牌 ===== */
 :root {
-  --background: oklch(0.935 0.015 252);
-  --foreground: oklch(0.11 0.01 285.823);
-  --card: oklch(0.965 0.008 252);
-  --card-foreground: oklch(0.11 0.01 285.823);
-  --popover: oklch(0.965 0.008 252);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.34 0.02 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.768 0.155 70);
-  --warning-foreground: oklch(0.21 0.006 285.885);
-  --success: oklch(0.696 0.17 162.48);
-  --success-foreground: oklch(0.985 0 0);
-  --info: oklch(0.6 0.118 230);
-  --info-foreground: oklch(0.985 0 0);
-  --selection: oklch(0.55 0.15 155);
-  --signal-1: #059669;
-  --signal-2: #4ade80;
-  --signal-3: #a3e635;
-  --signal-4: #facc15;
-  --signal-5: #f43f5e;
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --background: #f6f8fb;
+  --foreground: #1d4e89;
+  --card: #f6f8fb;
+  --card-foreground: #1d4e89;
+  --popover: #f6f8fb;
+  --popover-foreground: #1d4e89;
+  --primary: #1d4e89;
+  --primary-foreground: #f6f8fb;
+  --secondary: #eef2f7;
+  --secondary-foreground: #1d4e89;
+  --muted: #eef2f7;
+  --muted-foreground: #41608c;
+  --accent: #eef2f7;
+  --accent-foreground: #1d4e89;
+  --destructive: #c62f2f;
+  --destructive-foreground: #f6f8fb;
+  --warning: #a86e00;
+  --warning-foreground: #f6f8fb;
+  --success: #157a55;
+  --success-foreground: #f6f8fb;
+  --info: #1d4e89;
+  --info-foreground: #f6f8fb;
+  --selection: #1d4e89;
+  --signal-1: #157a55;
+  --signal-2: #2f9e6b;
+  --signal-3: #7ba05b;
+  --signal-4: #a86e00;
+  --signal-5: #c62f2f;
+  --border: rgb(29 78 137 / 0.28);
+  --input: rgb(29 78 137 / 0.28);
+  --ring: rgb(29 78 137 / 0.55);
+  --chart-1: #1d4e89;
+  --chart-2: #2f9e6b;
+  --chart-3: #a86e00;
+  --chart-4: #c62f2f;
+  --chart-5: #7a6bb5;
+  --radius: 0.125rem;
+  --font-sans: 'JetBrains Mono', ui-monospace, Menlo, monospace;
 }
 
+/* ===== blueprint 主题 · 晒图蓝（dark）设计令牌 ===== */
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.86 0.012 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.79 0.16 70);
-  --warning-foreground: oklch(0.141 0.005 285.823);
-  --success: oklch(0.74 0.17 162);
-  --success-foreground: oklch(0.141 0.005 285.823);
-  --info: oklch(0.68 0.13 230);
-  --info-foreground: oklch(0.141 0.005 285.823);
-  --selection: oklch(0.74 0.17 162);
-  --signal-1: #10b981;
-  --signal-2: #4ade80;
-  --signal-3: #a3e635;
-  --signal-4: #fde047;
-  --signal-5: #fb7185;
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --background: #143d72;
+  --foreground: #e9f2ff;
+  --card: #143d72;
+  --card-foreground: #e9f2ff;
+  --popover: #143d72;
+  --popover-foreground: #e9f2ff;
+  --primary: #e9f2ff;
+  --primary-foreground: #143d72;
+  --secondary: #0f3160;
+  --secondary-foreground: #e9f2ff;
+  --muted: #0f3160;
+  --muted-foreground: rgb(233 242 255 / 0.66);
+  --accent: #0f3160;
+  --accent-foreground: #e9f2ff;
+  --destructive: #ff8f86;
+  --destructive-foreground: #143d72;
+  --warning: #ffb000;
+  --warning-foreground: #143d72;
+  --success: #5fd6a5;
+  --success-foreground: #143d72;
+  --info: #e9f2ff;
+  --info-foreground: #143d72;
+  --selection: #e9f2ff;
+  --signal-1: #5fd6a5;
+  --signal-2: #8fe0c0;
+  --signal-3: #d6e08f;
+  --signal-4: #ffb000;
+  --signal-5: #ff8f86;
+  --border: rgb(233 242 255 / 0.22);
+  --input: rgb(233 242 255 / 0.22);
+  --ring: rgb(233 242 255 / 0.48);
+  --chart-1: #8fb7f5;
+  --chart-2: #5fd6a5;
+  --chart-3: #ffb000;
+  --chart-4: #ff8f86;
+  --chart-5: #b8a8f0;
 }
 
 @theme inline {
@@ -126,9 +128,9 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --font-sans: var(--font-sans);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
 }
 
@@ -153,51 +155,58 @@
     /* Background.vue owns the visible canvas; html keeps the no-JS fallback color. */
     background-color: transparent;
   }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: 0.04em;
+  }
 }
 
 /* iOS 15.4-16.3 can run the app but lacks Tailwind v4's modern color stack. */
 html.legacy-webkit {
-  --background: #e8edf4;
-  --foreground: #17181c;
-  --card: #f1f5f9;
-  --card-foreground: #17181c;
-  --popover: #f1f5f9;
-  --popover-foreground: #202126;
-  --primary: #303239;
-  --primary-foreground: #fafafa;
-  --secondary: #eef0f3;
-  --secondary-foreground: #303239;
-  --muted: #eef0f3;
-  --muted-foreground: #4d5260;
-  --accent: #eef0f3;
-  --accent-foreground: #303239;
-  --destructive: #dc2626;
-  --destructive-foreground: #fafafa;
-  --border: #d9dde3;
-  --input: #d9dde3;
-  --ring: #a8adb5;
+  --background: #f6f8fb;
+  --foreground: #1d4e89;
+  --card: #f6f8fb;
+  --card-foreground: #1d4e89;
+  --popover: #f6f8fb;
+  --popover-foreground: #1d4e89;
+  --primary: #1d4e89;
+  --primary-foreground: #f6f8fb;
+  --secondary: #eef2f7;
+  --secondary-foreground: #1d4e89;
+  --muted: #eef2f7;
+  --muted-foreground: #41608c;
+  --accent: #eef2f7;
+  --accent-foreground: #1d4e89;
+  --destructive: #c62f2f;
+  --destructive-foreground: #f6f8fb;
+  --border: #c2cfdd;
+  --input: #c2cfdd;
+  --ring: #7d97b8;
 }
 
 html.legacy-webkit.dark {
-  --background: #15161a;
-  --foreground: #fafafa;
-  --card: #27282d;
-  --card-foreground: #fafafa;
-  --popover: #27282d;
-  --popover-foreground: #fafafa;
-  --primary: #e5e7eb;
-  --primary-foreground: #27282d;
-  --secondary: #33343a;
-  --secondary-foreground: #fafafa;
-  --muted: #33343a;
-  --muted-foreground: #d1d5db;
-  --accent: #33343a;
-  --accent-foreground: #fafafa;
-  --destructive: #f87171;
-  --destructive-foreground: #fafafa;
-  --border: #3f4046;
-  --input: #47484f;
-  --ring: #777982;
+  --background: #143d72;
+  --foreground: #e9f2ff;
+  --card: #143d72;
+  --card-foreground: #e9f2ff;
+  --popover: #143d72;
+  --popover-foreground: #e9f2ff;
+  --primary: #e9f2ff;
+  --primary-foreground: #143d72;
+  --secondary: #0f3160;
+  --secondary-foreground: #e9f2ff;
+  --muted: #0f3160;
+  --muted-foreground: #a7bcd8;
+  --accent: #0f3160;
+  --accent-foreground: #e9f2ff;
+  --destructive: #ff8f86;
+  --destructive-foreground: #143d72;
+  --border: #3a5f92;
+  --input: #3a5f92;
+  --ring: #7ba0d4;
 }
 
 html.color-vision-friendly {
@@ -291,204 +300,69 @@ html.legacy-webkit [data-slot='card'] {
   }
 }
 
-/* ===== 节点卡片毛玻璃 — 亮色透出背景 ===== */
-/* ===== 全局卡片毛玻璃（统一首页和详情页） ===== */
+/* ===== blueprint 纸样卡片（替代毛玻璃 backdrop-filter） ===== */
 
 .node-card,
 .bg-card,
 [data-slot='card'] {
-  /* Keep the glass effect, but avoid making every card an overly expensive compositing layer. */
-  background-color: var(--glass-light-card, rgb(241 245 249 / 0.74)) !important;
-  border: 1px solid var(--glass-light-border, rgb(226 232 240 / 0.68)) !important;
-  backdrop-filter: blur(14px) saturate(145%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
-  box-shadow: var(--glass-light-shadow, 0 8px 28px rgb(15 23 42 / 0.18)) !important;
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
 }
 
 .node-card:hover,
 .bg-card:hover,
 [data-slot='card']:hover {
-  background-color: var(--glass-light-card-hover, rgb(248 250 252 / 0.8)) !important;
-  box-shadow: var(--glass-light-shadow, 0 12px 38px rgb(15 23 42 / 0.2)) !important;
+  background-color: var(--secondary) !important;
 }
-
-/* ===== 暗色模式 ===== */
 
 .dark .node-card,
 .dark .bg-card,
 .dark [data-slot='card'] {
-  /* Dark mode: keep a translucent glass feel while improving foreground contrast */
-  background-color: var(--glass-dark-card, rgb(10 14 22 / 0.82)) !important;
-  border: 1px solid var(--glass-dark-border, rgb(255 255 255 / 0.18)) !important;
-  box-shadow: var(--glass-dark-shadow, 0 8px 30px rgb(0 0 0 / 0.48)) !important;
+  background-color: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
 }
 
 .dark .node-card:hover,
 .dark .bg-card:hover,
 .dark [data-slot='card']:hover {
-  background-color: var(--glass-dark-card-hover, rgb(10 14 22 / 0.9)) !important;
-}
-
-.node-card,
-.bg-card,
-[data-slot='card'],
-.bg-background {
-  color: var(--glass-light-text, var(--color-foreground)) !important;
-}
-
-.node-card .text-muted-foreground,
-.bg-card .text-muted-foreground,
-[data-slot='card'] .text-muted-foreground,
-.bg-background .text-muted-foreground {
-  color: var(--glass-light-muted-text, var(--color-muted-foreground)) !important;
-}
-
-.node-card .text-foreground\/60,
-.bg-card .text-foreground\/60,
-[data-slot='card'] .text-foreground\/60 {
-  color: color-mix(in oklch, var(--glass-light-text, var(--color-foreground)) 78%, transparent) !important;
-}
-
-.node-card .text-foreground\/65,
-.bg-card .text-foreground\/65,
-[data-slot='card'] .text-foreground\/65 {
-  color: color-mix(in oklch, var(--glass-light-text, var(--color-foreground)) 82%, transparent) !important;
-}
-
-.node-card .text-foreground\/70,
-.bg-card .text-foreground\/70,
-[data-slot='card'] .text-foreground\/70 {
-  color: color-mix(in oklch, var(--glass-light-text, var(--color-foreground)) 86%, transparent) !important;
-}
-
-.node-card .text-foreground\/75,
-.bg-card .text-foreground\/75,
-[data-slot='card'] .text-foreground\/75 {
-  color: color-mix(in oklch, var(--glass-light-text, var(--color-foreground)) 90%, transparent) !important;
-}
-
-.dark .node-card,
-.dark .bg-card,
-.dark [data-slot='card'],
-.dark .bg-background {
-  color: var(--glass-dark-text, var(--color-foreground)) !important;
-}
-
-.dark .node-card .text-muted-foreground,
-.dark .bg-card .text-muted-foreground,
-.dark [data-slot='card'] .text-muted-foreground,
-.dark .bg-background .text-muted-foreground {
-  color: var(--glass-dark-muted-text, var(--color-muted-foreground)) !important;
-}
-
-.dark .node-card .text-foreground\/60,
-.dark .bg-card .text-foreground\/60,
-.dark [data-slot='card'] .text-foreground\/60 {
-  color: color-mix(in oklch, var(--glass-dark-text, var(--color-foreground)) 78%, transparent) !important;
-}
-
-.dark .node-card .text-foreground\/65,
-.dark .bg-card .text-foreground\/65,
-.dark [data-slot='card'] .text-foreground\/65 {
-  color: color-mix(in oklch, var(--glass-dark-text, var(--color-foreground)) 82%, transparent) !important;
-}
-
-.dark .node-card .text-foreground\/70,
-.dark .bg-card .text-foreground\/70,
-.dark [data-slot='card'] .text-foreground\/70 {
-  color: color-mix(in oklch, var(--glass-dark-text, var(--color-foreground)) 86%, transparent) !important;
-}
-
-.dark .node-card .text-foreground\/75,
-.dark .bg-card .text-foreground\/75,
-.dark [data-slot='card'] .text-foreground\/75 {
-  color: color-mix(in oklch, var(--glass-dark-text, var(--color-foreground)) 90%, transparent) !important;
+  background-color: var(--secondary) !important;
 }
 
 /* ===== Header ===== */
 
 header {
-  background-color: var(--glass-light-header, rgb(241 245 249 / 0.76)) !important;
-  backdrop-filter: blur(14px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(150%) !important;
-  border-bottom: 1px solid rgb(226 232 240 / 0.58) !important;
+  background-color: var(--card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid var(--border) !important;
 }
 
-.dark header {
-  background-color: var(--glass-dark-header, rgb(10 14 22 / 0.76)) !important;
-  border-bottom: 1px solid rgb(255 255 255 / 0.08) !important;
-}
-
-/* ===== 顶部统计栏 ===== */
+/* ===== 顶部统计栏 / 控制条 ===== */
 
 .bg-background {
-  background-color: var(--glass-light-control, rgb(241 245 249 / 0.76)) !important;
-  backdrop-filter: blur(14px) saturate(145%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(145%) !important;
-}
-
-.dark .bg-background {
-  background-color: var(--glass-dark-control, rgb(10 14 22 / 0.76)) !important;
+  background-color: var(--secondary) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* ===== 小组件背景 ===== */
 
 .bg-slate-500\/5 {
-  background-color: rgb(255 255 255 / 0.15) !important;
+  background-color: var(--secondary) !important;
 }
 
 .dark .bg-slate-500\/5 {
-  background-color: rgb(255 255 255 / 0.05) !important;
+  background-color: var(--secondary) !important;
 }
 
-/* Firefox composites many backdrop-filter layers less efficiently than Chromium.
-   Use opaque-enough surfaces there so long node lists and animated globes stay smooth. */
-@supports (-moz-appearance: none) {
-  .node-card,
-  .bg-card,
-  [data-slot='card'] {
-    background-color: color-mix(in srgb, var(--glass-light-card, #f1f5f9) 88%, rgb(226 232 240)) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  .node-card:hover,
-  .bg-card:hover,
-  [data-slot='card']:hover {
-    background-color: color-mix(in srgb, var(--glass-light-card-hover, #f8fafc) 88%, rgb(226 232 240)) !important;
-  }
-
-  .dark .node-card,
-  .dark .bg-card,
-  .dark [data-slot='card'] {
-    background-color: color-mix(in srgb, var(--glass-dark-card, #0f0f19) 92%, black) !important;
-  }
-
-  .dark .node-card:hover,
-  .dark .bg-card:hover,
-  .dark [data-slot='card']:hover {
-    background-color: color-mix(in srgb, var(--glass-dark-card-hover, #0f0f19) 94%, black) !important;
-  }
-
-  header,
-  .bg-background {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  header {
-    background-color: rgb(226 232 240 / 0.88) !important;
-  }
-
-  .dark header {
-    background-color: rgb(10 10 20 / 0.9) !important;
-  }
-
-  .bg-background {
-    background-color: rgb(226 232 240 / 0.84) !important;
-  }
-
-  .dark .bg-background {
-    background-color: rgb(20 20 35 / 0.86) !important;
-  }
+/* ===== blueprint 主题 · 彻底移除毛玻璃 backdrop-filter ===== */
+[class*='backdrop-blur'],
+[class*='backdrop-filter'],
+[class*='backdrop-saturate'] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }

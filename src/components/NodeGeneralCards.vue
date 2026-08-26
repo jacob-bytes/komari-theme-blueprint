@@ -6,7 +6,7 @@ import type { TopNodeMetric } from '@/utils/nodeMetricsHelper'
 import { Icon } from '@iconify/vue'
 import { useNow } from '@vueuse/core'
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
-import NodeEarthGlobe from '@/components/NodeEarthGlobe.vue'
+import NodeEarthCobeGlobe from '@/components/NodeEarthCobeGlobe.vue'
 import { CardX } from '@/components/ui/card-x'
 import { DataTooltip } from '@/components/ui/data-tooltip'
 import { UI_CONFIG } from '@/constants/ui'
@@ -731,7 +731,7 @@ const cardGridClass = computed(() => {
     ? 'h-auto -mt-42 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 auto-rows-[5rem] md:auto-rows-[7rem] gap-2'
     : 'h-42 -mt-42 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 grid-rows-2 gap-2'
 })
-const cardClass = 'group relative z-10 h-full bg-background/50 border-none hover:bg-background backdrop-blur-sm md:backdrop-blur-none transition-all'
+const cardClass = 'group relative z-10 h-full bg-card border-border hover:bg-secondary transition-all'
 const cardPositionClasses = [
   'col-span-4 row-span-1 col-start-1 row-start-1',
   'col-span-4 row-span-1 col-start-1 row-start-2',
@@ -808,7 +808,7 @@ onMounted(async () => {
 
 <template>
   <div v-if="shouldRenderHeader" :class="wrapperClass">
-    <NodeEarthGlobe
+    <NodeEarthCobeGlobe
       v-if="showEarth"
       :nodes="globeNodes"
       :class="earthClass"

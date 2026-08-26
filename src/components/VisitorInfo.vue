@@ -319,7 +319,7 @@ const siteName = computed(() => appStore.privateFeaturesAllowed ? '尊敬的管�
   <Transition name="slide-left">
     <div
       v-if="show && !dismissed"
-      class="fixed bottom-16 left-3 z-50 hidden w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl 2xl:block
+      class="fixed bottom-16 left-3 z-50 hidden w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl lg:block
              bg-white/70 dark:bg-neutral-900/70
              backdrop-blur-xl
              border border-white/40 dark:border-white/10

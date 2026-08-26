@@ -61,7 +61,7 @@ function komariThemeZip(): Plugin {
     apply: 'build',
     closeBundle: async () => {
       const commitHash = getCommitHash()
-      const zipFileName = `komari-theme-Glassmorphism-build-${commitHash}.zip`
+      const zipFileName = `blueprint-build-${commitHash}.zip`
       const distDir = resolve(__dirname, 'dist')
       const previewPath = resolve(__dirname, 'docs/preview.png')
       const outputPath = resolve(__dirname, zipFileName)
@@ -151,7 +151,6 @@ export default defineConfig({
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
           'echarts': ['echarts', 'vue-echarts'],
-          'globe': ['globe.gl', 'three'],
           'reka-ui': ['reka-ui'],
           'vueuse': ['@vueuse/core'],
           'v3-services': [

@@ -6,8 +6,8 @@
   --bp-ink: #1d4e89;
   --bp-faint: rgba(29, 78, 137, 0.55);
   --bp-ghost: rgba(29, 78, 137, 0.28);
-  --bp-grid: rgba(29, 78, 137, 0.055);
-  --bp-grid-major: rgba(29, 78, 137, 0.1);
+  --bp-grid: rgba(29, 78, 137, 0.033);
+  --bp-grid-major: rgba(29, 78, 137, 0.06);
   --bp-warn: #a86e00;
   --bp-alert: #c62f2f;
   --bp-frame: var(--bp-ink);
@@ -48,8 +48,8 @@
   --bp-ink: #e9f2ff;
   --bp-faint: rgba(233, 242, 255, 0.48);
   --bp-ghost: rgba(233, 242, 255, 0.22);
-  --bp-grid: rgba(233, 242, 255, 0.045);
-  --bp-grid-major: rgba(233, 242, 255, 0.09);
+  --bp-grid: rgba(233, 242, 255, 0.033);
+  --bp-grid-major: rgba(233, 242, 255, 0.054);
   --bp-warn: #ffb000;
   --bp-alert: #ff8f86;
 }
@@ -154,6 +154,17 @@
 .bp-root .bp-ga-wrap {
   overflow-x: auto;
   margin-top: 8px;
+}
+
+/* ---- 分区符号/设备符号矩形：SVG <rect> 默认 fill=black，须用纸色填充遮蔽跳线并保证可读 ---- */
+.bp-root .bp-ga-wrap .bp-zsym rect.bp-zb,
+.bp-root .bp-ga-wrap .bp-sym rect.bp-nb {
+  fill: var(--bp-paper);
+}
+
+.bp-root .bp-ga-wrap .bp-zsym:hover rect.bp-zb,
+.bp-root .bp-ga-wrap .bp-sym:hover rect.bp-nb {
+  fill: var(--bp-paper-deep);
 }
 
 /* ---- 描线动画 ---- */
@@ -264,8 +275,14 @@
 .bp-root table.bp-sched tbody tr.bp-link:hover td {
   background: rgba(29, 78, 137, 0.06);
 }
+.bp-root table.bp-sched tbody tr.bp-focus td {
+  background: rgba(29, 78, 137, 0.12);
+}
 .dark .bp-root table.bp-sched tbody tr.bp-link:hover td {
   background: rgba(233, 242, 255, 0.06);
+}
+.dark .bp-root table.bp-sched tbody tr.bp-focus td {
+  background: rgba(233, 242, 255, 0.12);
 }
 .bp-root table.bp-sched tr.bp-gsec td {
   font-family: Oswald, sans-serif;

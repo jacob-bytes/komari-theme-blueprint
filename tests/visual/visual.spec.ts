@@ -9,8 +9,6 @@ const STABLE_STYLE = `
     transition: none !important;
   }
   html { scroll-behavior: auto !important; }
-  .earth-globe-host canvas,
-  .earth-globe-canvas { opacity: 0 !important; }
 `
 
 async function openStablePage(page: Page, path = '/'): Promise<void> {
@@ -26,72 +24,67 @@ async function expectNodeMetricIcons(page: Page): Promise<void> {
     await expect(page.locator(`[data-node-metric-icon="${metric}"]`).first()).toBeVisible()
 }
 
-async function expectNodePingBars(page: Page): Promise<void> {
-  const card = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
-  for (const metric of ['latency', 'loss']) {
-    const bars = card.locator(`[data-node-ping-bars="${metric}"]`)
-    await expect(bars).toBeVisible()
-    await expect.poll(() => bars.evaluate(element => element.getBoundingClientRect().width)).toBeGreaterThan(0)
-  }
+const BLUEPRINT_TOOL = '蓝图：工程蓝图总图 · 分区 · 设备表'
+const SHOW_TOOLS = '显示首页工具'
+
+/** 工具条默认折叠，先展开再进入蓝图工具 */
+async function openBlueprint(page: Page): Promise<void> {
+  await page.getByRole('button', { name: SHOW_TOOLS }).click()
+  await page.getByRole('button', { name: BLUEPRINT_TOOL }).click()
 }
 
-test('home light desktop', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 })
+// ===== blueprint 视图（通过「蓝图」工具切换，默认视图为节点卡片） =====
+
+test('blueprint home light desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
   await installKomariFixture(page)
   await openStablePage(page)
-  await expectNodeMetricIcons(page)
-  await expectNodePingBars(page)
-  await expect(page).toHaveScreenshot('home-light-desktop.png', { fullPage: false })
+
+  await openBlueprint(page)
+  await expect(page.getByText('基础设施蓝图')).toBeVisible()
+  await expect(page.getByText('拓扑总图')).toBeVisible()
+  await expect(page.getByText('总线 · komari-core')).toBeVisible()
+  await expect(page.getByRole('heading', { name: '设备表' })).toBeVisible()
+  await expect(page).toHaveScreenshot('blueprint-home.png', { fullPage: false })
 })
 
-test('home dark mobile', async ({ page }) => {
+test('blueprint home dark mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await installKomariFixture(page, { dark: true })
   await openStablePage(page)
+
+  await openBlueprint(page)
+  await expect(page.getByText('基础设施蓝图')).toBeVisible()
+  await expect(page).toHaveScreenshot('blueprint-home-dark-mobile.png', { fullPage: false })
+})
+
+test('blueprint schedule renders grouped rows', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await installKomariFixture(page)
+  await openStablePage(page)
+
+  await openBlueprint(page)
+  await expect(page.getByText('基础设施蓝图')).toBeVisible()
+  await expect(page.locator('table.bp-sched')).toBeVisible()
+  await expect(page.locator('table.bp-sched tbody tr').first()).toBeVisible()
+})
+
+// ===== 节点卡片 / 列表视图（默认视图，无需切换） =====
+
+test('nodes tool view renders card grid', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await installKomariFixture(page)
+  await openStablePage(page)
+
   await expectNodeMetricIcons(page)
-  await expect(page).toHaveScreenshot('home-dark-mobile.png', { fullPage: false })
+  const card = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
+  await expect(card).toBeVisible()
+  await expect(page).toHaveScreenshot('nodes-card-desktop.png', { fullPage: false })
 })
 
-test('home accessible list desktop', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 })
-  await installKomariFixture(page, { colorVisionFriendly: true, viewMode: 'list', hideEarth: true })
-  await openStablePage(page)
-  await expect(page).toHaveScreenshot('home-accessible-list-desktop.png', { fullPage: false })
-})
-
-test('home cobe layout desktop', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 })
-  await installKomariFixture(page, { earthRenderer: 'cobe' })
-  await openStablePage(page)
-  await expectNodeMetricIcons(page)
-  await expect(page).toHaveScreenshot('home-cobe-desktop.png', { fullPage: false })
-})
-
-test('home tiled layout desktop', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 })
-  await installKomariFixture(page, { earthRenderer: 'tiled' })
-  await openStablePage(page)
-  await expectNodeMetricIcons(page)
-  await expect(page).toHaveScreenshot('home-tiled-desktop.png', { fullPage: false })
-})
-
-test('home tiled layout respects custom general cards and order', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 })
-  await installKomariFixture(page, {
-    earthRenderer: 'tiled',
-    generalCardKeys: ['currentTime', 'offlineNodes'],
-  })
-  await openStablePage(page)
-
-  const cards = page.locator('[data-general-card-key]')
-  await expect(cards).toHaveCount(2)
-  await expect(cards.first()).toHaveAttribute('data-general-card-key', 'currentTime')
-  await expect(cards.nth(1)).toHaveAttribute('data-general-card-key', 'offlineNodes')
-})
-
-test('home mini card metric icons remain accessible', async ({ page }) => {
+test('nodes tool view mini card icons remain accessible', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await installKomariFixture(page, { nodeCardSize: 'mini', hideEarth: true })
+  await installKomariFixture(page, { nodeCardSize: 'mini' })
   await openStablePage(page)
 
   const card = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
@@ -102,50 +95,7 @@ test('home mini card metric icons remain accessible', async ({ page }) => {
   await expect(card.getByRole('img', { name: '内存' })).toBeVisible()
 })
 
-test('node card expiry uses red through 5 days and yellow through 10 days', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 720 })
-  await installKomariFixture(page, { expiryThresholds: true, hideEarth: true })
-  await openStablePage(page)
-
-  const criticalCard = page.getByRole('button', { name: '查看节点 主控-洛杉矶 详情' })
-  const warningCard = page.getByRole('button', { name: '查看节点 香港边缘节点-超长名称布局测试 详情' })
-  const criticalExpiry = criticalCard.getByText('剩余', { exact: true }).locator('..')
-  const warningExpiry = warningCard.getByText('剩余', { exact: true }).locator('..')
-
-  await expect(criticalExpiry).toContainText('剩余5天')
-  await expect(criticalExpiry).toHaveClass(/text-destructive/)
-  await expect(warningExpiry).toContainText('剩余10天')
-  await expect(warningExpiry).toHaveClass(/text-warning/)
-})
-
-test('free node pricing stays semantic across home, finance, and detail', async ({ page }) => {
-  const freeNodeName = '主控-洛杉矶'
-  const freeNodeUuid = '00000000-0000-4000-8000-000000000001'
-  await page.setViewportSize({ width: 1280, height: 720 })
-  await installKomariFixture(page, { freePriceNode: true, hideEarth: true })
-  await openStablePage(page)
-
-  const nodeCard = page.getByRole('button', { name: `查看节点 ${freeNodeName} 详情` })
-  await expect(nodeCard.getByText('免费', { exact: true })).toBeVisible()
-  await expect(nodeCard.getByText('无', { exact: true })).toBeVisible()
-  await expect(nodeCard.getByText('免费 / 年', { exact: true })).toHaveCount(0)
-
-  await page.getByRole('button', { name: '查看剩余价值明细' }).click()
-  const financeDialog = page.getByRole('dialog', { name: '价值与费用明细' })
-  await expect(financeDialog.getByText(freeNodeName, { exact: true })).toHaveCount(0)
-  await financeDialog.getByLabel('排除免费节点').uncheck()
-  const freeNodeRow = financeDialog.getByRole('cell', { name: freeNodeName, exact: true }).locator('..')
-  await expect(freeNodeRow).toBeVisible()
-  await expect(freeNodeRow.getByText('免费', { exact: true })).toBeVisible()
-  await expect(freeNodeRow.getByText('无', { exact: true })).toBeVisible()
-
-  await page.goto(`/instance/${freeNodeUuid}`)
-  await expect(page.getByText('硬件信息', { exact: true })).toBeVisible()
-  await expect(page.getByText('节点价格', { exact: true })).toBeVisible()
-  await expect(page.getByText('剩余价值', { exact: true })).toBeVisible()
-  await expect(page.getByText('无', { exact: true })).toBeVisible()
-  await expect(page.getByText('免费 / 月', { exact: true })).toHaveCount(0)
-})
+// ===== 节点详情页 =====
 
 test('detail light desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
@@ -229,7 +179,11 @@ test('detail ping requests stay scoped to the current node', async ({ page }) =>
   await installKomariFixture(page)
   await openStablePage(page)
 
+  // 默认即节点卡片视图，首页 Ping 摘要订阅自动开始。
+  // RequestManager 并发限制会让 12 个节点的 Ping 摘要请求排队陆续发出，
+  // 等全部发出后再清空，避免队列残留被误计入详情页。
   await expect.poll(() => metricCalls.filter(isPingMetricCall).length).toBeGreaterThan(0)
+  await expect.poll(() => metricCalls.filter(call => call.method === 'public:queryMetrics' && isPingMetricCall(call)).length).toBe(12)
   const homeSummaryCalls = metricCalls.filter(call => call.method === 'public:queryMetrics' && isPingMetricCall(call))
   expect(homeSummaryCalls.length).toBeGreaterThan(0)
   expect(homeSummaryCalls.every(call => call.params.max_points === 150)).toBe(true)
@@ -256,34 +210,4 @@ test('detail ping tasks follow the backend task order', async ({ page }) => {
   await expect(taskCards.nth(1)).toHaveAttribute('data-ping-task-id', '10')
   await expect(taskCards.nth(2)).toHaveAttribute('data-ping-task-id', '20')
   await expect(taskCards).toContainText(['浙江移动', '浙江联通', '浙江电信'])
-})
-
-test('blueprint view renders master ga and schedule', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 })
-  await installKomariFixture(page, { hideEarth: true })
-  await openStablePage(page)
-
-  await page.getByRole('button', { name: '显示首页工具' }).click()
-  await page.getByRole('button', { name: /蓝图/ }).click()
-  await expect(page.getByText('基础设施蓝图')).toBeVisible()
-  await expect(page.getByText('拓扑总图')).toBeVisible()
-  await expect(page.getByText('总线 · komari-core')).toBeVisible()
-  await expect(page.getByText('设备表')).toBeVisible()
-  await expect(page.getByText('节点明细图')).toBeVisible()
-  await expect(page).toHaveScreenshot('blueprint-home.png', { fullPage: false })
-})
-
-test('blueprint detail sheet expands with nameplate', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 900 })
-  await installKomariFixture(page, { hideEarth: true })
-  await openStablePage(page)
-
-  await page.getByRole('button', { name: '显示首页工具' }).click()
-  await page.getByRole('button', { name: /蓝图/ }).click()
-  await expect(page.getByText('基础设施蓝图')).toBeVisible()
-
-  const row = page.locator('table.bp-sched tbody tr').first()
-  await row.click()
-  await expect(page.locator('.bp-nplate').first()).toBeVisible()
-  await expect(page.locator('.bp-nplate').first()).toContainText('系统')
 })

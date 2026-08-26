@@ -17,6 +17,17 @@ function hot(v: number): string {
   return ''
 }
 
+/** B/s → 自适应单位（G/M/K）显示，避免设备表出现原始字节整数 */
+function fmtNet(v: number): string {
+  if (v >= 1024 ** 3)
+    return `${(v / 1024 ** 3).toFixed(1)}G`
+  if (v >= 1024 ** 2)
+    return `${(v / 1024 ** 2).toFixed(1)}M`
+  if (v >= 1024)
+    return `${(v / 1024).toFixed(0)}K`
+  return `${Math.round(v)}`
+}
+
 function stamp(n: BlueprintNode): string {
   if (n.status === 'offline')
     return `<span class="bp-stamp">已离线</span>`
@@ -34,7 +45,7 @@ function schedRow(n: BlueprintNode): string {
     <td class="bp-num ${hot(n.cpu)}">${n.cpu}</td>
     <td class="bp-num ${hot(n.mem)}">${n.mem}</td>
     <td class="bp-num ${hot(n.disk)}">${n.disk}<br><span style="font-size:9px;color:var(--bp-faint)">${n.diskText}</span></td>
-    <td class="bp-num">↓${n.netIn} / ↑${n.netOut}</td>
+    <td class="bp-num">↓${fmtNet(n.netIn)} / ↑${fmtNet(n.netOut)}</td>
     <td class="bp-num ${n.ping != null && n.ping >= 150 ? 'bp-hot' : ''}">${n.ping ?? '—'}</td>
     <td>${stamp(n)}</td>
   </tr>`

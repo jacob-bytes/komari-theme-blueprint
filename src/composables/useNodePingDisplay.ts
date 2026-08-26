@@ -1,5 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue'
-import { computed, toValue } from 'vue'
+import { computed, ref, toValue } from 'vue'
 import { useNodePingStats } from '@/composables/useNodePingStats'
 import { PING_SUMMARY_MAX_COUNT } from '@/constants/load'
 import { useAppStore } from '@/stores/app'
@@ -118,20 +118,53 @@ export function useNodePingDisplay(
 
   const latencyBars = computed(() => buildPingBars('latency'))
   const lossBars = computed(() => buildPingBars('loss'))
-  const latencyRenderBars = computed(() => latencyBars.value.length ? latencyBars.value : buildEmptyPingBars('latency'))
-  const lossRenderBars = computed(() => lossBars.value.length ? lossBars.value : buildEmptyPingBars('loss'))
+  // 路由跳转/选中切换瞬间 enabled 变 false，会导致节点卡片 ping 数据被清空闪烁。
+  // 记忆最后一次有数据的显示，避免降级为占位符（-）。
+  const lastLatencyBars = ref<NodePingBar[]>([])
+  const lastLossBars = ref<NodePingBar[]>([])
+  const lastLatencyText = ref('')
+  const lastLossText = ref('')
+
+  const latencyRenderBars = computed(() => {
+    if (latencyBars.value.length) {
+      lastLatencyBars.value = latencyBars.value
+      return latencyBars.value
+    }
+    if (lastLatencyBars.value.length)
+      return lastLatencyBars.value
+    return buildEmptyPingBars('latency')
+  })
+  const lossRenderBars = computed(() => {
+    if (lossBars.value.length) {
+      lastLossBars.value = lossBars.value
+      return lossBars.value
+    }
+    if (lastLossBars.value.length)
+      return lastLossBars.value
+    return buildEmptyPingBars('loss')
+  })
 
   const latencyDisplay = computed(() => {
-    if (pingStats.hasData.value)
-      return `${Math.round(pingStats.avgLatency.value)} ms`
+    if (pingStats.hasData.value) {
+      const text = `${Math.round(pingStats.avgLatency.value)} ms`
+      lastLatencyText.value = text
+      return text
+    }
+    if (lastLatencyText.value)
+      return lastLatencyText.value
     if (pingStats.loading.value)
       return options.loadingDisplayText ?? '加载中'
     return options.emptyDisplayText ?? '-'
   })
 
   const lossDisplay = computed(() => {
-    if (pingStats.hasData.value)
-      return `${pingStats.avgLoss.value.toFixed(1)}%`
+    if (pingStats.hasData.value) {
+      const text = `${pingStats.avgLoss.value.toFixed(1)}%`
+      lastLossText.value = text
+      return text
+    }
+    if (lastLossText.value)
+      return lastLossText.value
     if (pingStats.loading.value)
       return options.loadingDisplayText ?? '加载中'
     return options.emptyDisplayText ?? '-'

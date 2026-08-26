@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { BlueprintData, BlueprintNode } from './types'
 import { computed, ref, watch } from 'vue'
-import { ALERT, esc, FAINT, INK, seg, txt, WARN } from './svg'
+import { getRegionDisplayName } from '@/utils/regionHelper'
+import { ALERT, esc, FAINT, fitText, INK, seg, txt, WARN } from './svg'
 
 const props = defineProps<{ data: BlueprintData, drilledZone?: string | null }>()
 const emit = defineEmits<{ (e: 'open', uuid: string): void }>()
@@ -34,7 +35,7 @@ watch(
 
 const boxW = 396
 const nodeW = 172
-const nodeH = 46
+const nodeH = 34
 const gap = 10
 const boxGap = 16
 const rowGap = 30
@@ -87,18 +88,16 @@ function zoneSvg(zName: string): string {
 function nodeSymbol(n: BlueprintNode, x: number, y: number): string {
   const off = n.status === 'offline'
   const warn = n.status === 'warn'
+  // 只显示主机名 + 状态标记（不携带 CPU/备注）；超长用 fitText 截断(…)
   let m = `<g class="bp-sym${off ? ' bp-off' : ''}" data-host="${esc(n.uuid)}" tabindex="0" role="button" aria-label="明细 ${esc(n.tag)}">`
-  m += `<rect class="bp-nb" x="${x}" y="${y}" width="${nodeW}" height="${nodeH}" stroke="${warn ? WARN : INK}" stroke-width="${warn ? 1.8 : 1.5}"${off ? ' stroke-dasharray="5 4"' : ''}/>`
-  m += txt(x + 8, y + 19, n.tag, 12.5, off ? FAINT : INK, 'start', 700, 1)
+  m += `<rect class="bp-nb" x="${x}" y="${y}" width="${nodeW}" height="${nodeH}" fill="var(--bp-paper)" stroke="${warn ? WARN : INK}" stroke-width="${warn ? 1.8 : 1.5}"${off ? ' stroke-dasharray="5 4"' : ''}/>`
+  m += txt(x + 8, y + 23, fitText(n.tag, 16), 12.5, off ? FAINT : INK, 'start', 700, 1)
   if (off)
-    m += txt(x + nodeW - 8, y + 19, '✕', 11, ALERT, 'end', 700)
+    m += txt(x + nodeW - 8, y + 23, '✕', 11, ALERT, 'end', 700)
   else if (warn)
-    m += txt(x + nodeW - 8, y + 19, '▲', 11, WARN, 'end', 700)
+    m += txt(x + nodeW - 8, y + 23, '▲', 11, WARN, 'end', 700)
   else
-    m += `<circle cx="${x + nodeW - 12}" cy="${y + 15}" r="3.5" fill="none" stroke="${INK}" stroke-width="1.2"/>`
-  m += txt(x + 8, y + 36, off ? `作废 · 最后在线 ${n.lastSeen}` : n.host, 8.5, FAINT, 'start', 400, 0.4)
-  if (!off)
-    m += txt(x + nodeW - 8, y + 36, `CPU ${n.cpu}%`, 9.5, n.cpu >= 85 ? WARN : FAINT, 'end', 700, 0.5)
+    m += `<circle cx="${x + nodeW - 12}" cy="${y + 17}" r="3.5" fill="none" stroke="${INK}" stroke-width="1.2"/>`
   return `${m}</g>`
 }
 
@@ -123,6 +122,11 @@ function buildGroups(items: BlueprintNode[]): { label: string, relay: boolean, i
   if (ungrouped.length)
     out.push({ label: '未分组', relay: false, items: ungrouped })
   return out
+}
+
+/** 分区（地区 emoji/代码）→ 中文名（未命中回退原值） */
+function regionTitle(region: string): string {
+  return getRegionDisplayName(region) || region
 }
 
 function stamp(zName: string): { text: string, cls: string } | null {
@@ -167,7 +171,7 @@ function zoneIndex(zName: string): number {
     >
       <div class="bp-dhead" tabindex="0" role="button" :aria-expanded="openZones.has(z.name) ? 'true' : 'false'" @click="toggle(z.name)" @keydown.enter="toggle(z.name)">
         <span class="bp-bub">{{ zoneIndex(z.name) + 1 }}</span>
-        <h2>{{ z.name }}</h2>
+        <h2>{{ regionTitle(z.name) }}</h2>
         <span class="bp-meta">{{ z.nodes.length }} 台 · 正常 {{ z.online }} · 告警 {{ z.warn }} · 离线 {{ z.offline }} · 图 DWG-01-0{{ zoneIndex(z.name) + 1 }}</span>
         <span v-if="stamp(z.name)" class="bp-stamp" :class="stamp(z.name)!.cls">{{ stamp(z.name)!.text }}</span>
         <span class="bp-tw">+</span>

@@ -33,11 +33,11 @@ interface QuickControlOption {
   icon: string
 }
 
-type HomeToolKey = 'nodes' | 'nodeCompare' | 'topology' | 'providerValue' | 'healthSummary' | 'snapshotExport' | 'auditLog' | 'blueprint'
+type HomeToolKey = 'nodes' | 'nodeCompare' | 'providerValue' | 'snapshotExport' | 'auditLog' | 'blueprint'
 type PrivateHomeToolKey = Exclude<HomeToolKey, 'nodes' | 'nodeCompare' | 'blueprint'>
 
 interface HomeToolOption {
-  key: Exclude<HomeToolKey, 'nodes'>
+  key: HomeToolKey
   label: string
   icon: string
   description: string
@@ -46,13 +46,11 @@ interface HomeToolOption {
 defineOptions({ name: 'HomeView' })
 
 const AuditLogPanel = defineAsyncComponent(() => import('@/components/AuditLogPanel.vue'))
-const HealthSummaryPanel = defineAsyncComponent(() => import('@/components/HealthSummaryPanel.vue'))
-const NodeCard = defineAsyncComponent(() => import('@/components/NodeCard.vue'))
 const NodeGeneralCards = defineAsyncComponent(() => import('@/components/NodeGeneralCards.vue'))
+const NodeCard = defineAsyncComponent(() => import('@/components/NodeCard.vue'))
 const NodeList = defineAsyncComponent(() => import('@/components/NodeList.vue'))
 const NodeComparePanel = defineAsyncComponent(() => import('@/components/NodeComparePanel.vue'))
 const PingMonitorDialog = defineAsyncComponent(() => import('@/components/PingMonitorDialog.vue'))
-const NodeTopologyPanel = defineAsyncComponent(() => import('@/components/NodeTopologyPanel.vue'))
 const ProviderValuePanel = defineAsyncComponent(() => import('@/components/ProviderValuePanel.vue'))
 const SnapshotExportPanel = defineAsyncComponent(() => import('@/components/SnapshotExportPanel.vue'))
 const BlueprintPanel = defineAsyncComponent(() => import('@/components/blueprint/BlueprintPanel.vue'))
@@ -90,9 +88,7 @@ const excludeFreeNodes = ref(true)
 const pingDialogNode = ref<NodeData | null>(null)
 
 const homeToolPermissionMap: Record<PrivateHomeToolKey, PermissionKey> = {
-  topology: 'nodeTopology',
   providerValue: 'providerValue',
-  healthSummary: 'healthSummary',
   snapshotExport: 'snapshotExport',
   auditLog: 'auditLog',
 }
@@ -114,13 +110,14 @@ const homeTools = computed<HomeToolOption[]>(() => {
     return []
 
   const tools: HomeToolOption[] = [
+    { key: 'nodes', label: '节点', icon: 'tabler:layout-grid', description: '节点卡片与列表视图' },
     { key: 'nodeCompare', label: '对比', icon: 'tabler:columns-3', description: '最多四台节点实时横向对比' },
-    { key: 'blueprint', label: '蓝图', icon: 'tabler:map-2', description: '工程蓝图总图 · 分区 · 明细图纸' },
+    { key: 'blueprint', label: '蓝图', icon: 'tabler:map-2', description: '工程蓝图总图 · 分区 · 设备表' },
   ]
   if (!appStore.privateFeaturesAllowed)
     return tools
 
-  return [...tools, { key: 'topology', label: '拓扑', icon: 'tabler:route', description: 'ASN / BGP / 上游根因' }, { key: 'providerValue', label: '性价比', icon: 'tabler:scale', description: '单机资源成本对比' }, { key: 'healthSummary', label: '健康', icon: 'tabler:heartbeat', description: '日周月历史健康概览' }, { key: 'snapshotExport', label: '导出', icon: 'tabler:download', description: 'CSV / JSON 数据快照' }, { key: 'auditLog', label: '日志', icon: 'tabler:list-details', description: '管理员操作审计日志' }]
+  return [...tools, { key: 'providerValue', label: '性价比', icon: 'tabler:scale', description: '单机资源成本对比' }, { key: 'snapshotExport', label: '导出', icon: 'tabler:download', description: 'CSV / JSON 数据快照' }, { key: 'auditLog', label: '日志', icon: 'tabler:list-details', description: '管理员操作审计日志' }]
 })
 
 const updateDebouncedSearch = useDebounceFn((value: string) => {
@@ -338,7 +335,7 @@ function setNodeViewMode(mode: 'card' | 'list') {
   })
 }
 
-async function toggleHomeTool(key: Exclude<HomeToolKey, 'nodes'>) {
+async function toggleHomeTool(key: HomeToolKey) {
   if (!homeTools.value.some(tool => tool.key === key))
     return
   if (activeHomeTool.value === key) {
@@ -346,7 +343,7 @@ async function toggleHomeTool(key: Exclude<HomeToolKey, 'nodes'>) {
     return
   }
 
-  const permission = (key === 'nodeCompare' || key === 'blueprint') ? null : homeToolPermissionMap[key]
+  const permission = (key === 'nodes' || key === 'nodeCompare' || key === 'blueprint') ? null : homeToolPermissionMap[key]
   if (permission) {
     const granted = await appStore.requireLoginPermission(permission, { force: true })
     if (!granted) {
@@ -433,13 +430,13 @@ const nodeCardGridClass = computed(() => {
     </div>
 
     <NodeGeneralCards
-      v-if="!appStore.hideGeneralCard"
+      v-if="activeHomeTool === 'nodes'"
       :nodes="groupNodeList"
       :globe-nodes="groupNodeList"
       :transition-key="appStore.nodeSelectedGroup"
     />
 
-    <div class="node-info p-4 pt-0 flex flex-col gap-4 relative z-1 pointer-events-none" :class="!!appStore.hideGeneralCard && 'pt-4'">
+    <div class="node-info p-4 pt-4 flex flex-col gap-4 relative z-1 pointer-events-none">
       <div class="nodes min-w-0">
         <Tabs v-model="appStore.nodeSelectedGroup" class="w-full flex-col gap-4">
           <div class="flex flex-col gap-2 xl:flex-row xl:items-center">
@@ -508,13 +505,13 @@ const nodeCardGridClass = computed(() => {
               >
                 <Icon icon="tabler:table" :width="14" :height="14" />
               </Button>
-              <div class="relative z-1 h-8" :class="searchText ? 'w-full sm:w-60' : 'w-8'">
+              <div class="relative z-1 h-8" :class="searchText ? 'w-full sm:w-60' : 'w-8 focus-within:!w-48 sm:focus-within:!w-52'">
                 <div class="absolute top-0 right-0 w-full">
                   <Input
                     v-model="searchText" placeholder="搜索名称、地区、IP、CPU"
                     aria-label="搜索节点"
                     class="transition-all border-none shadow-none h-8 bg-background/50 backdrop-blur-xs rounded-md hover:!bg-background/60 focus:!pl-7.5 focus:placeholder:!text-muted-foreground focus:!bg-background/80 focus:!ring-slate-500/10"
-                    :class="searchText ? '!w-full sm:!w-60 !pl-7.5 pr-7 placeholder:!text-muted-foreground' : 'w-8 placeholder:text-transparent focus:!w-52 sm:focus:!w-60'"
+                    :class="searchText ? '!w-full sm:!w-60 !pl-7.5 pr-7 placeholder:!text-muted-foreground' : 'w-8 placeholder:text-transparent focus:!pl-7.5 focus:!w-full'"
                     @keydown.esc.prevent="clearSearch"
                   />
                   <Icon
@@ -538,10 +535,8 @@ const nodeCardGridClass = computed(() => {
             <div v-if="activeHomeTool !== 'nodes'" class="mb-4 rounded-lg bg-background/50 px-3 py-2 text-sm text-muted-foreground">
               {{ activeToolTitle }} · 当前分组：{{ g.tab }}（{{ groupNodeList.length }} 台）
             </div>
-            <NodeTopologyPanel v-if="activeHomeTool === 'topology'" :nodes="groupNodeList" />
-            <NodeComparePanel v-else-if="activeHomeTool === 'nodeCompare'" :nodes="groupNodeList" />
+            <NodeComparePanel v-if="activeHomeTool === 'nodeCompare'" :nodes="groupNodeList" />
             <ProviderValuePanel v-else-if="activeHomeTool === 'providerValue'" :nodes="groupNodeList" />
-            <HealthSummaryPanel v-else-if="activeHomeTool === 'healthSummary'" :nodes="groupNodeList" />
             <SnapshotExportPanel v-else-if="activeHomeTool === 'snapshotExport'" :nodes="groupNodeList" />
             <AuditLogPanel v-else-if="activeHomeTool === 'auditLog'" />
             <BlueprintPanel v-else-if="activeHomeTool === 'blueprint'" :nodes="groupNodeList" />

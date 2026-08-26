@@ -586,7 +586,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
       <div v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'overview'" class="px-4 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         <CardX
           v-for="item in metricCards" :key="item.key" hoverable size="small"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="group h-full bg-card border-border hover:bg-secondary transition-all rounded-md"
           content-class="h-full !p-3"
         >
           <div :title="item.tooltip" class="flex h-full min-h-10 md:min-h-18 flex-col justify-between gap-3">
@@ -608,7 +608,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
       <div v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'overview'" class="px-4 gap-4 grid grid-cols-1 lg:grid-cols-2">
         <CardX
           title="硬件信息" size="small" content-class="flex-1"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="group h-full bg-card border-border hover:bg-secondary transition-all rounded-md"
         >
           <div class="flex flex-col gap-3 h-full">
             <!-- CPU 信息（跨全宽） -->
@@ -666,7 +666,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 
         <CardX
           title="系统信息" size="small" content-class="flex-1"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="group h-full bg-card border-border hover:bg-secondary transition-all rounded-md"
         >
           <div class="gap-3 grid grid-cols-1 sm:grid-cols-2 h-full sm:auto-rows-fr">
             <div
@@ -687,7 +687,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 
         <CardX
           title="存储信息" size="small"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="group h-full bg-card border-border hover:bg-secondary transition-all rounded-md"
         >
           <div class="gap-3 grid grid-cols-3">
             <div
@@ -705,7 +705,7 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
 
         <CardX
           title="网络信息" size="small"
-          class="group h-full bg-background/50 border-none hover:bg-background transition-all rounded-md"
+          class="group h-full bg-card border-border hover:bg-secondary transition-all rounded-md"
           content-class="pt-0"
         >
           <div class="gap-3 grid grid-cols-2">

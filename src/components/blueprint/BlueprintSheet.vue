@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { BlueprintData } from './types'
 import { ref } from 'vue'
-import BlueprintDetails from './BlueprintDetails.vue'
 import BlueprintGa from './BlueprintGa.vue'
 import BlueprintSchedule from './BlueprintSchedule.vue'
 import BlueprintTitleBlock from './BlueprintTitleBlock.vue'
@@ -11,7 +10,6 @@ import './blueprint.css'
 const props = defineProps<{ data: BlueprintData }>()
 
 const drilledZone = ref<string | null>(null)
-const focusUuid = ref<string | null>(null)
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -21,8 +19,14 @@ function onDrill(zone: string) {
   drilledZone.value = zone
 }
 
+/** 分区图/设备表点击：滚动到设备表对应行并短暂高亮 */
 function onOpen(uuid: string) {
-  focusUuid.value = uuid
+  const row = document.querySelector<HTMLElement>(`table.bp-sched tbody tr[data-host="${uuid}"]`)
+  if (!row)
+    return
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  row.classList.add('bp-focus')
+  window.setTimeout(() => row.classList.remove('bp-focus'), 1800)
 }
 </script>
 
@@ -78,16 +82,6 @@ function onOpen(uuid: string) {
       </div>
     </header>
 
-    <div class="bp-legend">
-      <span><svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="var(--bp-ink)" stroke-width="1.5" /></svg>在线</span>
-      <span><svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="var(--bp-warn)" stroke-width="2.5" /></svg>高负载</span>
-      <span><svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="var(--bp-faint)" stroke-width="1.5" stroke-dasharray="4 4" /></svg>离线</span>
-      <span><svg width="34" height="10"><line x1="0" y1="2" x2="34" y2="2" stroke="var(--bp-ink)" stroke-width="1.2" /><line x1="0" y1="7" x2="34" y2="7" stroke="var(--bp-ink)" stroke-width="1.2" /></svg>中转干线</span>
-      <span><svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="var(--bp-ink)" stroke-width="3" /></svg>分组边界</span>
-      <span><svg width="30" height="14"><path d="M2,3 a3,3 0 0 1 6,0 a3,3 0 0 1 6,0 a3,3 0 0 1 6,0 a3,3 0 0 1 6,0" fill="none" stroke="var(--bp-alert)" stroke-width="1.2" /></svg>修订云线</span>
-      <span><svg width="16" height="14"><circle cx="8" cy="7" r="6" fill="none" stroke="var(--bp-ink)" stroke-width="1.2" /></svg>详图索引</span>
-    </div>
-
     <div class="bp-sect">
       <span class="bp-no">DWG-01</span><h2>拓扑总图</h2><span class="bp-rule" />
     </div>
@@ -104,11 +98,6 @@ function onOpen(uuid: string) {
       <span class="bp-no">DWG-02</span><h2>设备表</h2><span class="bp-rule" />
     </div>
     <BlueprintSchedule :data="data" @open="onOpen" />
-
-    <div class="bp-sect">
-      <span class="bp-no">DWG-03…</span><h2>节点明细图</h2><span class="bp-rule" /><span class="bp-sub" style="letter-spacing:.1em">点击展开 · 默认仅展开告警图纸</span>
-    </div>
-    <BlueprintDetails :data="data" :focus-uuid="focusUuid" />
 
     <BlueprintTitleBlock :data="data" />
 

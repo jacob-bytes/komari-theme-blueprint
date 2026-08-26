@@ -1634,7 +1634,7 @@ onMounted(() => {
       <!-- 图表网格 -->
       <div v-else class="gap-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
         <!-- CPU 卡片 -->
-        <CardX v-if="isChartCardEnabled('cpu')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" data-load-chart-card="cpu" :style="getChartCardStyle('cpu')">
+        <CardX v-if="isChartCardEnabled('cpu')" size="small" class="bg-card border-border hover:bg-secondary transition-all rounded-md" data-load-chart-card="cpu" :style="getChartCardStyle('cpu')">
           <template #header>
             <MetricChartHeader title="CPU 与负载" icon="tabler:cpu" tone="rose">
               <div v-if="latestStatus?.cpu != null" class="text-xs flex gap-0.5 items-baseline">
@@ -1650,7 +1650,7 @@ onMounted(() => {
         </CardX>
 
         <!-- 内存卡片 -->
-        <CardX v-if="isChartCardEnabled('memory')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('memory')">
+        <CardX v-if="isChartCardEnabled('memory')" size="small" class="bg-card border-border hover:bg-secondary transition-all rounded-md" :style="getChartCardStyle('memory')">
           <template #header>
             <MetricChartHeader title="内存与 Swap" icon="tabler:database" tone="violet">
               <div class="text-xs flex gap-1 items-baseline">
@@ -1675,7 +1675,7 @@ onMounted(() => {
         </CardX>
 
         <!-- 磁盘卡片 -->
-        <CardX v-if="isChartCardEnabled('disk')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('disk')">
+        <CardX v-if="isChartCardEnabled('disk')" size="small" class="bg-card border-border hover:bg-secondary transition-all rounded-md" :style="getChartCardStyle('disk')">
           <template #header>
             <MetricChartHeader title="磁盘" icon="tabler:device-floppy" tone="emerald" :subtitle="diskPredictionSummary">
               <div class="text-xs flex gap-1 items-baseline shrink-0">
@@ -1699,7 +1699,7 @@ onMounted(() => {
         </CardX>
 
         <!-- 网络卡片 -->
-        <CardX v-if="isChartCardEnabled('network')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('network')">
+        <CardX v-if="isChartCardEnabled('network')" size="small" class="bg-card border-border hover:bg-secondary transition-all rounded-md" :style="getChartCardStyle('network')">
           <template #header>
             <MetricChartHeader title="实时网络" icon="tabler:network" tone="sky">
               <div class="text-xs flex gap-2 items-baseline">
@@ -1737,7 +1737,7 @@ onMounted(() => {
         />
 
         <!-- GPU 卡片 -->
-        <CardX v-if="isChartCardEnabled('gpu')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('gpu')">
+        <CardX v-if="isChartCardEnabled('gpu')" size="small" class="bg-card border-border hover:bg-secondary transition-all rounded-md" :style="getChartCardStyle('gpu')">
           <template #header>
             <MetricChartHeader title="GPU 利用率" icon="tabler:device-desktop-analytics" tone="cyan" :subtitle="getGpuDeviceNames(latestStatus)">
               <div class="text-xs flex gap-1 items-baseline shrink-0">
@@ -1773,7 +1773,7 @@ onMounted(() => {
         />
 
         <!-- 连接数卡片 -->
-        <CardX v-if="isChartCardEnabled('connections')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('connections')">
+        <CardX v-if="isChartCardEnabled('connections')" size="small" class="bg-card border-border hover:bg-secondary transition-all rounded-md" :style="getChartCardStyle('connections')">
           <template #header>
             <MetricChartHeader title="网络连接" icon="tabler:binary-tree" tone="amber">
               <div class="text-xs flex gap-1 items-baseline">
@@ -1789,7 +1789,7 @@ onMounted(() => {
         </CardX>
 
         <!-- 进程卡片 -->
-        <CardX v-if="isChartCardEnabled('process')" size="small" class="bg-background/50 border-none hover:bg-background transition-all rounded-md" :style="getChartCardStyle('process')">
+        <CardX v-if="isChartCardEnabled('process')" size="small" class="bg-card border-border hover:bg-secondary transition-all rounded-md" :style="getChartCardStyle('process')">
           <template #header>
             <MetricChartHeader title="进程" icon="tabler:activity" tone="slate">
               <span class="text-xs">

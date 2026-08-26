@@ -6,7 +6,7 @@ const props = defineProps<{ data: BlueprintData }>()
 
 const today = new Date().toISOString().slice(0, 10)
 
-const totalSheets = computed(() => 2 + props.data.zones.length + props.data.flat.length)
+const totalSheets = computed(() => 2 + props.data.zones.length)
 
 const hasWarn = computed(() => props.data.totals.warn > 0)
 

@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🌌 Komari Glassmorphism
+# 📐 blueprint
 
-## 给 Komari Monitor 的一套「玻璃拟态 · 运维驾驶舱」主题
+## 给 Komari Monitor 的一套「工程蓝图 · 运维图纸」主题
 
-从好看的监控首页，逐步成长为好用、可配置、适合长期运行的 Komari 主题。
+把节点监控渲染成工程图纸式的拓扑总图、分区图、设备表与明细图纸。
 
 ![Version](https://img.shields.io/github/v/release/sanrokamlan-prog/komari-theme-Glassmorphism?style=for-the-badge&label=release&color=10b981)
 ![Vue](https://img.shields.io/badge/Vue-3-42b883?style=for-the-badge&logo=vue.js)
@@ -35,14 +35,14 @@
 
 ## 🚀 项目定位
 
-| 项目     | 说明                                                      |
-| :------- | :-------------------------------------------------------- |
-| 当前版本 | **v3.3.7**                                                |
-| 主题定位 | Komari Monitor 可导入 zip 主题，不是普通 Web App 部署包   |
-| 视觉风格 | 毛玻璃卡片、动态背景、浅色 / 深色 / 北京时间自动日夜模式  |
-| 数据能力 | Metric Store 优先，旧接口自动 fallback，兼容 Komari 1.2.x |
-| 高级工具 | 拓扑、性价比、健康摘要、快照导出、访客安全审计            |
-| 发布产物 | `komari-theme-Glassmorphism-build-<short-sha>.zip`        |
+| 项目     | 说明                                                                    |
+| :------- | :---------------------------------------------------------------------- |
+| 当前版本 | **v0.0.11**                                                             |
+| 主题定位 | Komari Monitor 可导入 zip 主题，不是普通 Web App 部署包                 |
+| 视觉风格 | 工程图纸（白图 / 晒图蓝）、等宽字体、浅色 / 深色 / 北京时间自动日夜模式 |
+| 数据能力 | Metric Store 优先，旧接口自动 fallback，兼容 Komari 1.2.x               |
+| 高级工具 | 拓扑、性价比、健康摘要、快照导出、访客安全审计                          |
+| 发布产物 | `blueprint-build-<short-sha>.zip`                                       |
 
 > 好看只是外壳。v3 真正的重点，是把 Metric、Ping、流量、费用、健康分析和运维工具整合成日常真的会打开来看的监控面板。
 
@@ -463,7 +463,7 @@ https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism
 ### 方式二：手动安装 Release
 
 1. 打开 [Releases](https://github.com/sanrokamlan-prog/komari-theme-Glassmorphism/releases)
-2. 下载最新的 `komari-theme-Glassmorphism-build-*.zip`
+2. 下载最新的 `blueprint-build-*.zip`
 3. 登录 Komari Monitor 后台，进入 **设置 → 主题管理**
 4. 上传 zip 并启用主题
 5. 在主题设置中调整视觉、卡片、快捷控制和高级工具
@@ -496,7 +496,7 @@ bun run test:visual:update
 构建成功后会生成：
 
 - `dist/`
-- `komari-theme-Glassmorphism-build-<short-sha>.zip`
+- `blueprint-build-<short-sha>.zip`
 
 发布包固定包含：
 
