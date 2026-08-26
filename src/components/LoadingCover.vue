@@ -9,45 +9,69 @@ const hasCustomBackground = computed(() => appStore.backgroundEnabled && Boolean
 
 <template>
   <div
-    class="loading-cover flex items-center inset-0 justify-center fixed z-20"
+    class="loading-cover inset-0 fixed z-20 overflow-x-hidden"
     :class="hasCustomBackground ? 'loading-cover--custom-background' : ''"
   >
-    <div
-      class="loading-cover__indicator flex flex-col items-center gap-2"
-      :class="hasCustomBackground ? 'text-white/75 dark:text-white/75' : 'text-foreground'"
-    >
-      <span
-        class="inline-block animate-spin rounded-full border-2"
-        :class="hasCustomBackground ? 'size-5' : 'size-7'"
-        style="border-color: color-mix(in srgb, currentColor 18%, transparent); border-top-color: currentColor;"
-      />
-      <span v-if="!hasCustomBackground" class="text-sm text-muted-foreground">Loading...</span>
+    <!-- 骨架屏：模拟页面结构（顶栏 / 概览区 / 节点卡网格），取代全屏灰色阻塞 -->
+    <div class="max-w-[1280px] mx-auto px-4 pt-4 flex flex-col gap-4">
+      <div class="skeleton h-10 rounded-md" />
+      <div class="skeleton h-8 rounded-md w-2/3 max-sm:w-full" />
+
+      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+        <div v-for="i in 6" :key="`ov-${i}`" class="skeleton h-16 md:h-20 rounded-md" />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div v-for="i in 4" :key="`card-${i}`" class="skeleton h-56 md:h-64 rounded-md" />
+      </div>
+
+      <div class="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+        <span
+          class="inline-block animate-spin rounded-full border-2 size-4"
+          style="border-color: color-mix(in srgb, currentColor 18%, transparent); border-top-color: currentColor;"
+        />
+        加载中…
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* 渐变加载层：保留极淡底灰以区分状态，但不再整屏不透明遮盖布局 */
 .loading-cover {
-  background: radial-gradient(circle at 50% 20%, rgb(148 163 184 / 0.12), transparent 42%), rgb(15 23 42 / 0.72);
+  background: color-mix(in srgb, var(--background) 42%, transparent);
 }
 
-:root:not(.dark) .loading-cover {
-  background:
-    radial-gradient(circle at 50% 16%, rgb(255 255 255 / 0.12), transparent 34%),
-    linear-gradient(180deg, rgb(148 163 184 / 0.34), rgb(100 116 139 / 0.42));
-}
-
-.loading-cover__indicator {
-  transition:
-    opacity 240ms ease,
-    transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+:root:not(.dark):not(.legacy-webkit) .loading-cover {
+  background: color-mix(in srgb, var(--background) 42%, transparent);
 }
 
 .loading-cover--custom-background {
-  background-color: rgb(15 23 42 / 0.08);
+  background: rgb(15 23 42 / 0.08);
 }
 
 :root:not(.dark) .loading-cover--custom-background {
-  background-color: rgb(15 23 42 / 0.1);
+  background: rgb(15 23 42 / 0.1);
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--secondary) 25%, var(--muted) 37%, var(--secondary) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
 }
 </style>

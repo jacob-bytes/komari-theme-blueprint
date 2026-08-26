@@ -186,7 +186,7 @@ function getDevicePixelRatio(): number {
   if (typeof window === 'undefined')
     return 1
 
-  return Math.min(window.devicePixelRatio || 1, 2)
+  return Math.min(window.devicePixelRatio || 1, 2.5)
 }
 
 function buildInitialOptions(): COBEOptions {
@@ -200,7 +200,7 @@ function buildInitialOptions(): COBEOptions {
     theta,
     dark: colors.dark,
     diffuse: 0.5, // 从 2.2 降到 1.0，减少白色溢光
-    mapSamples: 16000, // 适中采样：点阵更稀疏，旋转时摩尔纹更轻（过高采样会加剧像素干涉）
+    mapSamples: 18000, // 点阵密度：略加密以平滑球体边缘（过高采样会加剧摩尔纹）
     mapBrightness: colors.mapBrightness,
     baseColor: colors.baseColor,
     markerColor: colors.markerColor,
@@ -406,7 +406,8 @@ function onPointerUp(e: PointerEvent) {
 <style scoped>
 .earth-globe-canvas {
   contain: layout paint;
-  /* 轻微模糊柔化点阵 + 球体外圈环形发光（亮/暗由 --globe-glow 变量驱动） */
-  filter: blur(0.5px) drop-shadow(0 0 22px var(--globe-glow));
+  /* 球体外圈环形发光（亮/暗由 --globe-glow 变量驱动）；移除 blur 保持点阵边缘清晰 */
+  filter: drop-shadow(0 0 22px var(--globe-glow));
+  transform: translateZ(0);
 }
 </style>

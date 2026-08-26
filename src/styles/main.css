@@ -369,3 +369,14 @@ header {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+
+/* ===== Header 例外：恢复半透明毛玻璃（桌面 + 移动；-webkit- 兼容 iOS） ===== */
+.glass-header {
+  background-color: color-mix(in srgb, var(--card) 70%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
+}
+
+html.legacy-webkit .glass-header {
+  background-color: color-mix(in srgb, var(--card) 88%, white) !important;
+}

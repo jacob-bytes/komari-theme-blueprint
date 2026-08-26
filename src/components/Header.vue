@@ -102,9 +102,9 @@ const sitename = computed(() => {
   <VisitorInfo v-if="!appStore.loading && appStore.visitorInfoEnabled" />
 
   <div
-    class="transition-all duration-200 top-0 sticky z-10 w-full bg-card border-b border-border"
+    class="glass-header backdrop-blur-xl transition-all duration-200 top-0 sticky z-10 w-full border-b border-border"
     :class="isScrolled ? 'shadow-sm' : ''"
-    style="padding-top: env(safe-area-inset-top)"
+    style="padding-top: env(safe-area-inset-top); width: 100%;"
   >
     <div class="px-4 flex-between h-14 max-w-[1280px] mx-auto">
       <div class="flex items-center gap-3 cursor-pointer" @click="router.push('/')">
