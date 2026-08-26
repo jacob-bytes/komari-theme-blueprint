@@ -72,6 +72,33 @@ export type DetailMetricCardKey
     | 'totalTraffic'
     | 'trafficQuota'
 
+/** 详情概览卡业务域分组（纯展示层归类，不影响卡片集合/数量/顺序） */
+export type DetailMetricCardGroup = 'finance' | 'runtime' | 'network'
+
+export const DETAIL_METRIC_CARD_GROUP_MAP: Record<DetailMetricCardKey, DetailMetricCardGroup> = {
+  // 财务 / 订阅
+  nodePrice: 'finance',
+  monthlyCost: 'finance',
+  remainingTime: 'finance',
+  remainingValue: 'finance',
+  // 运行状态
+  cpuUsage: 'runtime',
+  gpuUsage: 'runtime',
+  memoryUsage: 'runtime',
+  swapUsage: 'runtime',
+  diskUsage: 'runtime',
+  load: 'runtime',
+  temperature: 'runtime',
+  processes: 'runtime',
+  connections: 'runtime',
+  uptime: 'runtime',
+  // 网络流量
+  uploadSpeed: 'network',
+  downloadSpeed: 'network',
+  totalTraffic: 'network',
+  trafficQuota: 'network',
+}
+
 export type NodeListMetadataField
   = | 'provider'
     | 'region'

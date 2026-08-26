@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DetailMetricCardKey } from '@/stores/app'
+import type { DetailMetricCardGroup, DetailMetricCardKey } from '@/stores/app'
 import type { CurrencyCode } from '@/utils/financeHelper'
 import { Icon } from '@iconify/vue'
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useNodeProviderMetadata } from '@/composables/useNodeProviderMetadata'
 import { LOAD_RECORD_MAX_COUNT } from '@/constants/load'
 import { loadNodeLoadRecords } from '@/services/history.service'
-import { useAppStore } from '@/stores/app'
+import { DETAIL_METRIC_CARD_GROUP_MAP, useAppStore } from '@/stores/app'
 import { useNodesStore } from '@/stores/nodes'
 import { formatCityNameZh } from '@/utils/cityNameHelper'
 import { getCpuBenchmarkRating, getPassMarkCpuLookupUrl } from '@/utils/cpuBenchmark'
@@ -471,6 +471,30 @@ const trafficProgressClass = computed(() => {
 })
 
 const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.map(getDetailMetricCard))
+
+const DETAIL_METRIC_GROUPS: Array<{ key: DetailMetricCardGroup, label: string }> = [
+  { key: 'finance', label: '财务 / 订阅' },
+  { key: 'runtime', label: '运行状态' },
+  { key: 'network', label: '网络流量' },
+]
+
+/**
+ * 顶部概览卡按业务域分组（按 key 归类，尊重配置的卡片集合与组内顺序）。
+ * 兜底：任一域落单（1 张卡）时返回 null，保持原平铺布局，避免单卡组。
+ */
+const groupedMetricCards = computed<Array<{ key: DetailMetricCardGroup, label: string, cards: MetricCard[] }> | null>(() => {
+  const sections = DETAIL_METRIC_GROUPS
+    .map(group => ({
+      ...group,
+      cards: metricCards.value.filter(card => DETAIL_METRIC_CARD_GROUP_MAP[card.key] === group.key),
+    }))
+    .filter(section => section.cards.length > 0)
+
+  if (sections.some(section => section.cards.length === 1))
+    return null
+
+  return sections
+})
 </script>
 
 <template>
@@ -583,25 +607,56 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
       </div>
 
       <!-- 价格指标卡片 -->
-      <div v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'overview'" class="px-4 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
-        <CardX
-          v-for="item in metricCards" :key="item.key" hoverable size="small"
-          class="group h-full bg-card border-border hover:bg-secondary transition-all rounded-md"
-          content-class="h-full !p-3"
-        >
-          <div :title="item.tooltip" class="flex h-full min-h-10 md:min-h-18 flex-col justify-between gap-3">
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs font-medium tracking-wider text-muted-foreground">{{ item.label }}</span>
-              <Icon :icon="item.icon" :width="20" :height="20" class="text-slate-500/25 transition-colors group-hover:text-slate-500" />
+      <div v-if="!appStore.nodeDetailSectionTabsEnabled || activeDetailSection === 'overview'" class="px-4 flex flex-col gap-5">
+        <!-- 分组模式：按业务域分节（财务/运行/网络），落单时回退平铺 -->
+        <template v-if="groupedMetricCards">
+          <section v-for="section in groupedMetricCards" :key="section.key" class="flex flex-col gap-3">
+            <h3 class="detail-group-title">
+              {{ section.label }}
+            </h3>
+            <div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+              <CardX
+                v-for="item in section.cards" :key="item.key" hoverable size="small"
+                class="group h-full bg-card border-border hover:bg-secondary transition-all rounded-md"
+                content-class="h-full !p-3"
+              >
+                <div :title="item.tooltip" class="flex h-full min-h-10 md:min-h-18 flex-col justify-between gap-3">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-xs font-medium tracking-wider text-muted-foreground">{{ item.label }}</span>
+                    <Icon :icon="item.icon" :width="20" :height="20" class="text-slate-500/25 transition-colors group-hover:text-slate-500" />
+                  </div>
+                  <div class="min-w-0 space-y-1">
+                    <div class="flex min-w-0 items-baseline gap-1 truncate font-semibold leading-none" :class="item.valueClass">
+                      <span class="truncate text-base sm:text-2xl">{{ item.value }}</span>
+                      <span v-if="item.unit" class="shrink-0 text-[11px] font-medium text-muted-foreground sm:text-xs">{{ item.unit }}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardX>
             </div>
-            <div class="min-w-0 space-y-1">
-              <div class="flex min-w-0 items-baseline gap-1 truncate font-semibold leading-none" :class="item.valueClass">
-                <span class="truncate text-base sm:text-2xl">{{ item.value }}</span>
-                <span v-if="item.unit" class="shrink-0 text-[11px] font-medium text-muted-foreground sm:text-xs">{{ item.unit }}</span>
+          </section>
+        </template>
+        <!-- 平铺模式（兜底） -->
+        <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+          <CardX
+            v-for="item in metricCards" :key="item.key" hoverable size="small"
+            class="group h-full bg-card border-border hover:bg-secondary transition-all rounded-md"
+            content-class="h-full !p-3"
+          >
+            <div :title="item.tooltip" class="flex h-full min-h-10 md:min-h-18 flex-col justify-between gap-3">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-medium tracking-wider text-muted-foreground">{{ item.label }}</span>
+                <Icon :icon="item.icon" :width="20" :height="20" class="text-slate-500/25 transition-colors group-hover:text-slate-500" />
+              </div>
+              <div class="min-w-0 space-y-1">
+                <div class="flex min-w-0 items-baseline gap-1 truncate font-semibold leading-none" :class="item.valueClass">
+                  <span class="truncate text-base sm:text-2xl">{{ item.value }}</span>
+                  <span v-if="item.unit" class="shrink-0 text-[11px] font-medium text-muted-foreground sm:text-xs">{{ item.unit }}</span>
+                </div>
               </div>
             </div>
-          </div>
-        </CardX>
+          </CardX>
+        </div>
       </div>
 
       <!-- 硬件信息 -->
@@ -765,3 +820,17 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
     </template>
   </div>
 </template>
+
+<style scoped>
+.detail-group-title {
+  font-family: Oswald, 'JetBrains Mono', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-foreground);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 4px;
+  margin: 0;
+}
+</style>
