@@ -1258,14 +1258,10 @@ const useAppStore = defineStore('app', () => {
       return
     }
 
-    const nextMode: Record<ThemeMode, ThemeMode> = {
-      auto: 'light',
-      light: 'dark',
-      dark: 'auto',
-    }
-
-    const currentMode = isValidThemeMode(themeMode.value) ? themeMode.value : 'auto'
-    themeMode.value = nextMode[currentMode]
+    // 基于当前实际明暗一步切换：亮 → 显式深色、深 → 显式亮色。
+    // 旧轮换 auto→light→dark→auto 在 auto(北京时间日间=亮色)时会先到 light（视觉无变化），
+    // 导致"亮色切深色要点击两次"。
+    themeMode.value = isDark.value ? 'light' : 'dark'
   }
 
   function syncAuthState() {
