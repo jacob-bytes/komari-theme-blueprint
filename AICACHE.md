@@ -12,6 +12,15 @@
 
 ## 当前任务
 
+- 状态：done，蓝图视图新增完成(未发布版本，待用户确认后再决定是否发版)
+- 目标：新增「蓝图」工程图纸式首页工具 Tab,把节点监控渲染为拓扑总图 / 分区图 / 设备表 / 节点明细图一整套图纸。
+- 里程碑：M5 新功能,复用现有 service/composable 数据层,不修改数据、请求、计费或发布契约。
+- 实现：`src/components/blueprint/` 自包含子树 —— `.bp-root` 作用域设计令牌(白图默认/`.dark` 晒图蓝)、`mapNodes` 纯函数映射(NodeData→BlueprintNode,按 region 分区、按 group 分组、≥85 告警)、拓扑总图(聚合分区符号)、分区图(分组边界框+紧凑设备符号)、设备表(按组分节)、明细图(铭牌/负载/进程/TCP/UDP/尺寸线/CPU 与延迟双测量曲线,历史经 `useBlueprintHistory` 接 `loadNodeLoadRecords`/`loadPingRecordsWithTasks`)、图签与动态修订记录;HomeView 新增公开工具 `blueprint`(与「对比」同级,无需登录)。
+- 集成注意：`NodeData` 未暴露实时 `ping` 汇总,蓝图设备表延迟列经 `mapNodes(nodes, pingAvgByUuid?)` 可选注入,当前 MVP 未注入(延迟历史由明细图曲线覆盖);`homeAdvancedToolsVisible` 由 Header「显示首页工具」按钮控制。
+- 验证：`bun run type-check`、`bun run lint`、`bun run build` 均通过;新增 2 条 Playwright 用例(总图渲染 + 明细展开铭牌),全量 17 条用例通过,新快照 `tests/visual/snapshots/chromium/blueprint-home.png`。
+- 不做(YAGNI 留待后续)：机柜聚合(>15 台/区)、中转→落地干线推导、图纸模式独立后台配置、GPU/流量配额在明细图呈现。
+- 交接：如需发版,版本号仍在 `komari-theme.json`;发版前建议用真实后端确认蓝图历史曲线与延迟列观感。
+
 - 状态：in-progress，本地修复与验证完成，正在发布 v3.3.5
 - 目标：修复详情页延迟任务卡片、图例和主页 Ping 指标线与 Komari 后台任务排序不一致的问题。
 - 里程碑：M4 UI/UX 兼容性修复，不修改后端任务权重或接口契约。
