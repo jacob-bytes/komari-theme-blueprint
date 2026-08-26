@@ -1,0 +1,889 @@
+<!--
+  Komari Monitor — theme prototype: "Terminal CRT / TTY" (interactive v2)
+  ----------------------------------------------------------------------
+  Single-file static mockup of a server-monitoring dashboard styled as a
+  phosphor CRT terminal. Open directly in a browser (file://) — no build
+  step, no external JS libraries (only the JetBrains Mono font via CDN).
+
+  v2 additions:
+  - $ top --all        multi-host CPU mini-charts (small multiples)
+  - bottom prompt bar  live filter across all sections ($ ... | grep 'x')
+  - sortable node list (click host/cpu/mem/disk/ping)
+  - detail node switcher (click a host name to inspect it)
+  - 4 phosphor color themes: green / amber / ice / mono (localStorage)
+  - seeded PRNG so charts stay stable across re-renders
+
+  Layout is character-grid based: the script measures the monospace char
+  width and re-renders on resize, downsampling 24h history to fit.
+-->
+<!doctype html>
+<html lang="en" data-theme="green">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>komari@monitor — tty prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <style>
+      /* ---- phosphor palettes (status colors warn/bad stay semantic) ---- */
+      :root,
+      [data-theme='green'] {
+        --bg: #050505;
+        --green: #33ff66; /* main ink   */
+        --dim: #1a7a3a; /* borders/labels */
+        --cyan: #00e5ff; /* accent 2   */
+        --amber: #ffb000; /* warn       */
+        --red: #ff3355; /* bad        */
+        --mint: #66ffcc; /* accent 3   */
+        --soft: #cfffda; /* accent 4   */
+      }
+      [data-theme='amber'] {
+        --green: #ffb000;
+        --dim: #8a5f00;
+        --cyan: #ffe9bd;
+        --mint: #ffd166;
+        --soft: #fff2d9;
+      }
+      [data-theme='ice'] {
+        --green: #00e5ff;
+        --dim: #006b7a;
+        --cyan: #7df9ff;
+        --mint: #66ffcc;
+        --soft: #d6faff;
+      }
+      [data-theme='mono'] {
+        --green: #e6e6e6;
+        --dim: #5a5a5a;
+        --cyan: #bdbdbd;
+        --mint: #9a9a9a;
+        --soft: #ffffff;
+      }
+      * {
+        box-sizing: border-box;
+        border-radius: 0;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--green);
+        font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+        font-size: 14px;
+        line-height: 1.45;
+        padding: 14px 10px 64px;
+        min-height: 100vh;
+      }
+      #app {
+        max-width: 1024px;
+        margin: 0 auto;
+      }
+      .l {
+        white-space: pre;
+      }
+      .cmd {
+        margin: 22px 0 6px;
+        font-weight: 700;
+      }
+      .c-green {
+        color: var(--green);
+      }
+      .c-amber {
+        color: var(--amber);
+      }
+      .c-cyan {
+        color: var(--cyan);
+      }
+      .c-red {
+        color: var(--red);
+      }
+      .c-dim {
+        color: var(--dim);
+      }
+      /* per-node sparkline accents */
+      .a0 {
+        color: var(--green);
+      }
+      .a1 {
+        color: var(--cyan);
+      }
+      .a2 {
+        color: var(--amber);
+      }
+      .a3 {
+        color: var(--mint);
+      }
+      .a4 {
+        color: var(--red);
+      }
+      .a5 {
+        color: var(--soft);
+      }
+      .cursor {
+        animation: blink 1s steps(1) infinite;
+      }
+      @keyframes blink {
+        0%,
+        49.9% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+      .row {
+        white-space: pre;
+      }
+      .row:hover,
+      .row:hover * {
+        background: var(--green);
+        color: #000;
+        text-shadow: none;
+      }
+      .thead {
+        white-space: pre;
+        color: var(--dim);
+      }
+      .table-view {
+        overflow-x: auto;
+      }
+      .card-view {
+        display: none;
+      }
+      .card {
+        border: 1px solid var(--dim);
+        padding: 6px 10px;
+        margin: 0 0 10px;
+      }
+      .panels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 16px;
+      }
+      .click {
+        cursor: pointer;
+        text-decoration: underline dotted;
+        text-underline-offset: 3px;
+      }
+      .click:hover {
+        background: var(--green);
+        color: #000;
+        text-shadow: none;
+      }
+      /* bottom command / filter bar */
+      #promptbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg);
+        border-top: 1px solid var(--dim);
+        padding: 7px 10px;
+        font-size: 14px;
+      }
+      #cmdline {
+        flex: 1;
+        background: transparent;
+        border: 0;
+        outline: 0;
+        padding: 0;
+        color: var(--green);
+        font: inherit;
+        caret-color: var(--green);
+      }
+      #cmdline::placeholder {
+        color: var(--dim);
+      }
+      /* compact screens: stacked cards, no scanlines/glow (battery/GPU) */
+      @media (max-width: 639px) {
+        body {
+          font-size: 13px;
+          padding: 10px 6px 56px;
+        }
+        .table-view {
+          display: none;
+        }
+        .card-view {
+          display: block;
+        }
+      }
+      /* CRT effects only on >=640px */
+      @media (min-width: 640px) {
+        body::before {
+          /* scanline overlay */
+          content: '';
+          position: fixed;
+          inset: 0;
+          z-index: 999;
+          pointer-events: none;
+          background: repeating-linear-gradient(0deg, #000 0, #000 1px, transparent 1px, transparent 3px);
+          opacity: 0.06;
+        }
+        .c-green,
+        .a0 {
+          text-shadow: 0 0 6px color-mix(in srgb, var(--green) 35%, transparent);
+        }
+        .c-amber,
+        .a2 {
+          text-shadow: 0 0 6px color-mix(in srgb, var(--amber) 35%, transparent);
+        }
+        .c-cyan,
+        .a1 {
+          text-shadow: 0 0 6px color-mix(in srgb, var(--cyan) 35%, transparent);
+        }
+        .c-red,
+        .a4 {
+          text-shadow: 0 0 6px color-mix(in srgb, var(--red) 35%, transparent);
+        }
+        .a3 {
+          text-shadow: 0 0 6px color-mix(in srgb, var(--mint) 35%, transparent);
+        }
+        .a5 {
+          text-shadow: 0 0 6px color-mix(in srgb, var(--soft) 35%, transparent);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="promptbar">
+      <span class="c-cyan">&gt;</span>
+      <input
+        id="cmdline"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="filter nodes… (e.g. hk, jp, us)"
+      />
+      <span class="cursor">▌</span>
+    </div>
+    <script>
+      'use strict'
+      /* ================= mock data (seeded, stable) ================= */
+      const BLOCKS = '▁▂▃▄▅▆▇█'
+      const PTS = 288 // 5-minute samples over 24h
+
+      const NODES = [
+        { host: 'hk-node-01', region: 'HK', cpu: 34, mem: 61, disk: 42, down: 12, up: 3, ping: 32, status: 'ok' },
+        { host: 'jp-tokyo-02', region: 'JP', cpu: 18, mem: 47, disk: 38, down: 8, up: 2, ping: 58, status: 'ok' },
+        { host: 'us-la-03', region: 'US', cpu: 89, mem: 92, disk: 77, down: 46, up: 19, ping: 142, status: 'warn' },
+        { host: 'de-frank-04', region: 'DE', cpu: 27, mem: 55, disk: 51, down: 9, up: 4, ping: 171, status: 'ok' },
+        {
+          host: 'sg-node-05',
+          region: 'SG',
+          cpu: null,
+          mem: null,
+          disk: null,
+          down: null,
+          up: null,
+          ping: 65,
+          status: 'offline',
+        },
+        { host: 'cn-sh-06', region: 'CN', cpu: 12, mem: 33, disk: 29, down: 22, up: 6, ping: 9, status: 'ok' },
+      ]
+
+      function mulberry32(a) {
+        return function () {
+          a |= 0
+          a = (a + 0x6d2b79f5) | 0
+          let t = Math.imul(a ^ (a >>> 15), 1 | a)
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+        }
+      }
+
+      function genPing(n, seed) {
+        const rnd = mulberry32(seed),
+          out = []
+        for (let i = 0; i < PTS; i++) {
+          const t = (i / PTS) * 24
+          if (n.status === 'offline') {
+            // reachable until 2h ago
+            out.push(
+              t >= 22
+                ? null
+                : Math.max(
+                    1,
+                    Math.round(
+                      n.ping + Math.sin((t / 24) * Math.PI * 2) * n.ping * 0.1 + (rnd() - 0.5) * n.ping * 0.15,
+                    ),
+                  ),
+            )
+            continue
+          }
+          let v
+          if (n.host === 'us-la-03') {
+            v = 140 + (rnd() - 0.5) * 6
+          } else {
+            v = n.ping + Math.sin((t / 24) * Math.PI * 4) * n.ping * 0.08 + (rnd() - 0.5) * n.ping * 0.12
+            if (n.host === 'hk-node-01' && t >= 13 && t < 13.5) v += 180 * (1 - Math.abs(t - 13.25) / 0.25)
+          }
+          out.push(Math.max(1, Math.round(v)))
+        }
+        return out
+      }
+      function genCpu(n, seed) {
+        const rnd = mulberry32(seed),
+          out = []
+        const base = n.status === 'offline' ? 30 : Math.max(5, n.cpu * 0.8)
+        const spikeH = 6 + (seed % 14) // each host peaks at a different hour
+        for (let i = 0; i < PTS; i++) {
+          const t = (i / PTS) * 24
+          let v =
+            base * 0.7 +
+            base * 0.35 * Math.sin(((t - 6) / 24) * Math.PI * 2) +
+            base * 0.2 * Math.sin(t * 1.7 + seed) +
+            (rnd() - 0.5) * 8
+          if (n.status !== 'offline' && t >= spikeH && t < spikeH + 1.5)
+            v += 55 * (1 - Math.abs(t - (spikeH + 0.7)) / 0.8)
+          out.push(Math.min(98, Math.max(3, Math.round(v))))
+        }
+        return out
+      }
+      function trend(base, n, drift, seed) {
+        const rnd = mulberry32(seed),
+          a = []
+        let v = base - drift * n
+        for (let i = 0; i < n; i++) {
+          v += drift + (rnd() - 0.5) * 1.6
+          a.push(Math.min(99, Math.max(1, Math.round(v))))
+        }
+        return a
+      }
+
+      NODES.forEach((n, i) => {
+        n.hist = genPing(n, 1000 + i * 77)
+        n.cpuHist = genCpu(n, 2000 + i * 131)
+        n.mem7 = trend(n.mem || 50, 56, -0.04, 3000 + i)
+        n.mem30 = trend(n.mem || 50, 56, 0.08, 4000 + i)
+        n.disk7 = trend(n.disk || 40, 56, 0.12, 5000 + i)
+        n.disk30 = trend(n.disk || 40, 56, 0.3, 6000 + i)
+      })
+
+      /* ================= ui state ================= */
+      const THEMES = ['green', 'amber', 'ice', 'mono']
+      const SORTS = ['host', 'cpu', 'mem', 'disk', 'ping']
+      const state = {
+        theme: localStorage.getItem('tty-theme') || 'green',
+        filter: '',
+        sort: 'host',
+        sel: 0,
+      }
+      document.documentElement.dataset.theme = THEMES.includes(state.theme) ? state.theme : 'green'
+
+      /* ================= helpers ================= */
+      function downsample(a, n) {
+        const out = [],
+          sz = a.length / n
+        for (let b = 0; b < n; b++) {
+          const from = Math.floor(b * sz)
+          const sl = a.slice(from, Math.max(Math.floor((b + 1) * sz), from + 1))
+          const vs = sl.filter((v) => v != null)
+          out.push(vs.length ? Math.round(vs.reduce((x, y) => x + y, 0) / vs.length) : null)
+        }
+        return out
+      }
+      function spark(ds) {
+        const vs = ds.filter((v) => v != null)
+        if (!vs.length) return ds.map(() => ' ').join('')
+        const mn = Math.min.apply(null, vs),
+          mx = Math.max.apply(null, vs),
+          sp = mx - mn || 1
+        return ds.map((v) => (v == null ? '╳' : BLOCKS[Math.min(7, Math.floor(((v - mn) / sp) * 8))])).join('')
+      }
+      function bar(pct, cells) {
+        cells = cells || 10
+        const f = Math.round((pct / 100) * cells)
+        return '█'.repeat(f) + '░'.repeat(cells - f)
+      }
+      function fmtT(i) {
+        const m = i * 5
+        return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')
+      }
+      function pingStats(h) {
+        const vs = h.filter((v) => v != null)
+        let cur = null
+        for (let i = h.length - 1; i >= 0; i--)
+          if (h[i] != null) {
+            cur = h[i]
+            break
+          }
+        return {
+          cur: cur,
+          avg: vs.length ? Math.round(vs.reduce((a, b) => a + b, 0) / vs.length) : null,
+          max: vs.length ? Math.max.apply(null, vs) : null,
+          loss: Math.round(((PTS - vs.length) / PTS) * 100),
+        }
+      }
+      function histStats(h) {
+        const vs = h.filter((v) => v != null)
+        let peak = 0,
+          pi = 0
+        h.forEach((v, i) => {
+          if (v != null && v > peak) {
+            peak = v
+            pi = i
+          }
+        })
+        return { avg: vs.length ? Math.round(vs.reduce((a, b) => a + b, 0) / vs.length) : 0, peak: peak, pi: pi }
+      }
+      function nowStr() {
+        const d = new Date(),
+          p = (x) => String(x).padStart(2, '0')
+        let tz = ''
+        try {
+          tz = new Intl.DateTimeFormat('en', { timeZoneName: 'short' })
+            .formatToParts(d)
+            .find((x) => x.type === 'timeZoneName').value
+        } catch (e) {}
+        return (
+          d.getFullYear() +
+          '-' +
+          p(d.getMonth() + 1) +
+          '-' +
+          p(d.getDate()) +
+          ' ' +
+          p(d.getHours()) +
+          ':' +
+          p(d.getMinutes()) +
+          (tz ? ' ' + tz : '')
+        )
+      }
+      function cmd(c) {
+        return '<div class="l cmd"><span class="c-amber">$</span> ' + c + '</div>'
+      }
+      function esc(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      }
+      /* box-drawing panel: ┌─ TITLE ───┐ / │ body │ / └─────┘ ; lines may be {t,c} for colored text */
+      function box(title, lines, w, cls) {
+        cls = cls || 'c-green'
+        const top = '┌─ ' + title + ' ' + '─'.repeat(Math.max(0, w - 5 - title.length)) + '┐'
+        const bot = '└' + '─'.repeat(Math.max(0, w - 2)) + '┘'
+        const body = lines.map((l) => {
+          const t = typeof l === 'string' ? l : l.t,
+            c = typeof l === 'string' ? '' : l.c
+          const pad = Math.max(0, w - 4 - t.length)
+          const padded = c ? '<span class="' + c + '">' + t + '</span>' + ' '.repeat(pad) : t.padEnd(pad + t.length)
+          return '│ ' + padded + ' │'
+        })
+        return [top]
+          .concat(body, [bot])
+          .map((x) => '<div class="l ' + cls + '">' + x + '</div>')
+          .join('')
+      }
+      function filtered() {
+        const f = state.filter.trim().toLowerCase()
+        if (!f) return NODES.slice()
+        return NODES.filter((n) => n.host.toLowerCase().includes(f) || n.region.toLowerCase().includes(f))
+      }
+      function sorted(list) {
+        const on = list.filter((n) => n.status !== 'offline'),
+          off = list.filter((n) => n.status === 'offline')
+        const k = state.sort
+        on.sort((a, b) => (k === 'host' ? a.host.localeCompare(b.host) : b[k] - a[k]))
+        return on.concat(off)
+      }
+
+      /* ================= sections ================= */
+      function renderHeader(W) {
+        const left = '[ komari@monitor ]'
+        const now = nowStr()
+        let right = '[ ' + now + ' ]'
+        if (W < left.length + right.length + 6) right = '[ ' + now.slice(5, 16) + ' ]'
+        if (W < left.length + right.length + 6) right = '[ ' + now.slice(11, 16) + ' ]'
+        const dash = Math.max(1, W - 4 - left.length - right.length)
+        const top = '┌─' + left + '─'.repeat(dash) + right + '─┐'
+        const total = NODES.length,
+          off = NODES.filter((n) => n.status === 'offline').length,
+          warn = NODES.filter((n) => n.status === 'warn').length,
+          on = total - off
+        let sum = total + ' nodes · ' + on + ' online · ' + warn + ' warn · ' + off + ' offline'
+        if (sum.length > W - 4) sum = total + ' nodes · ' + on + ' up · ' + warn + ' warn · ' + off + ' down'
+        const pad = Math.max(0, W - 4 - sum.length)
+        const mid = '│ <span class="c-dim">' + sum + '</span>' + ' '.repeat(pad) + ' │'
+        const bot = '└' + '─'.repeat(Math.max(0, W - 2)) + '┘'
+        const th =
+          '[ theme: ' +
+          THEMES.map((t) =>
+            t === state.theme
+              ? '<span class="c-amber">' + t + '</span>'
+              : '<span class="click" data-theme="' + t + '">' + t + '</span>',
+          ).join(' · ') +
+          ' ]'
+        return (
+          '<div class="l c-green">' +
+          top +
+          '</div>' +
+          '<div class="l c-green">' +
+          mid +
+          '</div>' +
+          '<div class="l c-green">' +
+          bot +
+          '</div>' +
+          '<div class="l c-dim">' +
+          th +
+          '</div>'
+        )
+      }
+
+      function tableRow(n, CW) {
+        const host = n.host.padEnd(CW.host),
+          region = n.region.padEnd(CW.region)
+        if (n.status === 'offline') {
+          const spanW = CW.bar * 2 + CW.net + CW.ping - 1
+          const msg = ' offline · last seen 2h ago '
+          const d = Math.max(0, spanW - msg.length)
+          const span = '─'.repeat(Math.floor(d / 2)) + msg + '─'.repeat(d - Math.floor(d / 2)) + ' '
+          return '<div class="row c-dim">' + host + region + span + '<span class="c-red">✕ LOST</span></div>'
+        }
+        const warn = n.status === 'warn'
+        const cls = (v) => (v >= 85 ? 'c-red' : v >= 70 ? 'c-amber' : '')
+        const seg = (t, c) => (c ? '<span class="' + c + '">' + t + '</span>' : t)
+        const cpu = (bar(n.cpu) + ' ' + String(n.cpu).padStart(3) + '%').padEnd(CW.bar)
+        const mem = (bar(n.mem) + ' ' + String(n.mem).padStart(3) + '%').padEnd(CW.bar)
+        const net = ('↓' + n.down + 'MB/s ↑' + n.up + 'MB/s').padEnd(CW.net)
+        const ping = (n.ping + 'ms').padEnd(CW.ping)
+        const st = warn ? '<span class="c-amber">▲ WARN</span>' : '<span class="c-green">● OK</span>'
+        return (
+          '<div class="row">' +
+          seg(host, warn ? 'c-amber' : '') +
+          region +
+          seg(cpu, cls(n.cpu)) +
+          seg(mem, cls(n.mem)) +
+          net +
+          seg(ping, n.ping >= 150 ? 'c-amber' : '') +
+          st +
+          '</div>'
+        )
+      }
+      function card(n) {
+        if (n.status === 'offline') {
+          return (
+            '<div class="card c-dim">' +
+            '<div class="l">' +
+            n.host +
+            '  <span class="c-red">✕ LOST</span></div>' +
+            '<div class="l">region ' +
+            n.region +
+            '</div>' +
+            '<div class="l">──── offline · last seen 2h ago ────</div>' +
+            '</div>'
+          )
+        }
+        const st =
+          n.status === 'warn' ? '<span class="c-amber">▲ WARN load high</span>' : '<span class="c-green">● OK</span>'
+        return (
+          '<div class="card">' +
+          '<div class="l">' +
+          n.host +
+          '  ' +
+          st +
+          '</div>' +
+          '<div class="l c-dim">region ' +
+          n.region +
+          ' · ping ' +
+          n.ping +
+          'ms</div>' +
+          '<div class="l">cpu ' +
+          bar(n.cpu) +
+          ' ' +
+          n.cpu +
+          '%</div>' +
+          '<div class="l">mem ' +
+          bar(n.mem) +
+          ' ' +
+          n.mem +
+          '%</div>' +
+          '<div class="l">dsk ' +
+          bar(n.disk) +
+          ' ' +
+          n.disk +
+          '%</div>' +
+          '<div class="l">net ↓' +
+          n.down +
+          'MB/s ↑' +
+          n.up +
+          'MB/s</div>' +
+          '</div>'
+        )
+      }
+      function renderList(W, list) {
+        const CW = { host: 12, region: 8, bar: 16, net: 16, ping: 7 }
+        const f = state.filter.trim()
+        let h = cmd('komari list --all --sort ' + state.sort + (f ? " | grep '" + esc(f) + "'" : ''))
+        if (!list.length) return h + '<div class="l c-dim"># no nodes match</div>'
+        h +=
+          '<div class="l c-dim"># sort: ' +
+          SORTS.map((s) =>
+            s === state.sort
+              ? '<span class="c-amber">[' + s + ']</span>'
+              : '<span class="click" data-sort="' + s + '">' + s + '</span>',
+          ).join(' ') +
+          '</div>'
+        const head =
+          'HOST'.padEnd(CW.host) +
+          'REGION'.padEnd(CW.region) +
+          'CPU'.padEnd(CW.bar) +
+          'MEM'.padEnd(CW.bar) +
+          'NET ↓/↑'.padEnd(CW.net) +
+          'PING'.padEnd(CW.ping) +
+          'STATUS'
+        h +=
+          '<div class="table-view"><div class="thead">' +
+          head +
+          '</div><div class="thead">' +
+          '─'.repeat(head.length) +
+          '</div>'
+        sorted(list).forEach((n) => {
+          h += tableRow(n, CW)
+        })
+        h += '</div><div class="card-view">'
+        sorted(list).forEach((n) => {
+          h += card(n)
+        })
+        h += '</div>'
+        return h
+      }
+
+      /* $ top --all : one mini CPU chart per node (small multiples) */
+      function renderTop(W, list) {
+        let h = cmd('top --all --cpu 24h')
+        if (!list.length) return h
+        const cols = Math.max(18, Math.min(30, W - 6)),
+          rows = 4
+        h += '<div class="panels">'
+        list.forEach((n) => {
+          const title = n.host.length > cols ? n.host.slice(0, cols) : n.host
+          if (n.status === 'offline') {
+            h +=
+              '<div>' +
+              box(
+                title,
+                [
+                  { t: '──── offline ────', c: 'c-dim' },
+                  { t: 'last seen 2h ago', c: 'c-dim' },
+                  ' ',
+                  { t: '✕ LOST', c: 'c-red' },
+                  ' ',
+                  ' ',
+                ],
+                cols + 4,
+              ) +
+              '</div>'
+            return
+          }
+          const ds = downsample(n.cpuHist, cols).map((v) => (v == null ? 0 : v))
+          const lines = []
+          for (let r = rows - 1; r >= 0; r--) {
+            let line = ''
+            for (let c = 0; c < cols; c++) {
+              const lvl = (ds[c] / 100) * rows * 8,
+                cell = lvl - r * 8
+              line += cell >= 8 ? '█' : cell <= 0 ? ' ' : BLOCKS[Math.min(7, Math.max(0, Math.ceil(cell) - 1))]
+            }
+            lines.push(line)
+          }
+          const st = histStats(n.cpuHist)
+          const foot = ('cur ' + n.cpu + '% avg ' + st.avg + '% pk ' + st.peak + '%').slice(0, cols)
+          const memLine = ('mem ' + bar(n.mem, Math.max(6, cols - 9)) + ' ' + n.mem + '%').slice(0, cols)
+          lines.push({ t: foot, c: n.cpu >= 85 ? 'c-red' : n.cpu >= 70 ? 'c-amber' : 'c-dim' })
+          lines.push({ t: memLine, c: n.mem >= 85 ? 'c-red' : n.mem >= 70 ? 'c-amber' : 'c-dim' })
+          h += '<div>' + box(title, lines, cols + 4) + '</div>'
+        })
+        h += '</div>'
+        return h
+      }
+
+      function renderPing(W, list) {
+        let h = cmd('ping --all --last 24h')
+        if (!list.length) return h
+        h +=
+          W >= 64
+            ? '<div class="l c-dim"># trend: self-scaled per host · ╳ = no data · stats: cur/avg/max ms · loss%</div>'
+            : '<div class="l c-dim"># self-scaled · ╳ = no data · cur/avg/max · loss%</div>'
+        list.forEach((n) => {
+          const i = NODES.indexOf(n)
+          const s = pingStats(n.hist)
+          const f = (v) => (v == null ? '  —' : String(v).padStart(3))
+          const stat = f(s.cur) + '/' + f(s.avg) + '/' + f(s.max) + ' ' + String(s.loss).padStart(2) + '%'
+          const sparkW = W - 12 - 2 - stat.length
+          if (sparkW >= 14) {
+            h +=
+              '<div class="l"><span class="c-dim">' +
+              n.host.padEnd(12) +
+              '</span><span class="a' +
+              i +
+              '">' +
+              spark(downsample(n.hist, sparkW)) +
+              '</span> <span class="c-dim">' +
+              stat +
+              '</span></div>'
+          } else {
+            h +=
+              '<div class="l"><span class="c-dim">' +
+              n.host.padEnd(12) +
+              '</span><span class="a' +
+              i +
+              '">' +
+              spark(downsample(n.hist, Math.max(8, W - 13))) +
+              '</span></div>'
+            h += '<div class="l c-dim">' + ''.padEnd(12) + ' ' + stat + '</div>'
+          }
+        })
+        return h
+      }
+
+      function renderDetail(W, list) {
+        if (!list.length) return ''
+        let n = NODES[state.sel]
+        if (list.indexOf(n) < 0) {
+          n = list[0]
+          state.sel = NODES.indexOf(n)
+        }
+        let h = cmd('stats ' + n.host + ' --cpu --mem --disk')
+        /* node switcher: click a host to inspect it */
+        h +=
+          '<div class="l c-dim" style="white-space:pre-wrap"># node: ' +
+          list
+            .map((x) =>
+              x === n
+                ? '<span class="c-amber">[' + x.host + ']</span>'
+                : '<span class="click" data-sel="' + NODES.indexOf(x) + '">' + x.host + '</span>',
+            )
+            .join(' ') +
+          '</div>'
+        if (n.status === 'offline') {
+          return h + box(n.host, [{ t: '── no data: node offline (last seen 2h ago) ──', c: 'c-dim' }], Math.min(W, 52))
+        }
+        /* CPU: ASCII area chart, up to 60 cols x 8 rows */
+        const cols = Math.max(20, Math.min(60, W - 4)),
+          rows = 8
+        const ds = downsample(n.cpuHist, cols).map((v) => (v == null ? 0 : v))
+        const lines = []
+        for (let r = rows - 1; r >= 0; r--) {
+          let line = ''
+          for (let c = 0; c < cols; c++) {
+            const lvl = (ds[c] / 100) * rows * 8,
+              cell = lvl - r * 8
+            line += cell >= 8 ? '█' : cell <= 0 ? ' ' : BLOCKS[Math.min(7, Math.max(0, Math.ceil(cell) - 1))]
+          }
+          lines.push(line)
+        }
+        const step = cols >= 48 ? 3 : 6
+        const tick = new Array(cols).fill(' '),
+          lab = new Array(cols).fill(' ')
+        for (let hr = 0; hr < 24; hr += step) {
+          const pos = Math.round((hr / 24) * (cols - 1))
+          tick[pos] = '┬'
+          const s = String(hr).padStart(2, '0') + ':00'
+          for (let k = 0; k < s.length && pos + k < cols; k++) lab[pos + k] = s[k]
+        }
+        lines.push(tick.join(''))
+        lines.push(lab.join(''))
+        const st = histStats(n.cpuHist)
+        lines.push('')
+        const footer = 'cur: ' + n.cpu + '%  avg: ' + st.avg + '%  peak: ' + st.peak + '% @ ' + fmtT(st.pi)
+        if (footer.length <= cols) {
+          lines.push(footer)
+        } else {
+          lines.push('cur: ' + n.cpu + '%  avg: ' + st.avg + '%')
+          lines.push('peak: ' + st.peak + '% @ ' + fmtT(st.pi))
+        }
+        h += box('CPU · ' + n.host + ' · 24h', lines, cols + 4)
+        /* MEM + DISK side by side (stacked when narrow) */
+        const pw = W >= 84 ? Math.floor((W - 4) / 2) : W
+        const bw = Math.max(10, pw - 10)
+        const memL = [
+          bar(n.mem, bw) + ' ' + n.mem + '%',
+          'used ' + n.mem + '% · free ' + (100 - n.mem) + '%',
+          ' 7d ' + spark(downsample(n.mem7, bw - 4)),
+          '30d ' + spark(downsample(n.mem30, bw - 4)),
+        ]
+        const diskL = [
+          bar(n.disk, bw) + ' ' + n.disk + '%',
+          'used ' + n.disk + '% · free ' + (100 - n.disk) + '%',
+          ' 7d ' + spark(downsample(n.disk7, bw - 4)),
+          '30d ' + spark(downsample(n.disk30, bw - 4)),
+          { t: 'ETA full: ~14 months (+3%/mo)', c: 'c-dim' },
+        ]
+        h +=
+          '<div class="panels"><div>' + box('MEM', memL, pw) + '</div><div>' + box('DISK', diskL, pw) + '</div></div>'
+        return h
+      }
+
+      /* ================= render loop ================= */
+      let charW = 8.4
+      function measure() {
+        try {
+          const d = document.createElement('div')
+          d.style.cssText = 'position:absolute;left:-9999px;visibility:hidden;white-space:pre'
+          d.textContent = '0'.repeat(200)
+          document.body.appendChild(d)
+          const w = d.getBoundingClientRect().width / 200
+          d.remove()
+          if (w > 0) charW = w
+        } catch (e) {}
+      }
+      function render() {
+        const app = document.getElementById('app')
+        const W = Math.max(30, Math.floor(app.clientWidth / charW))
+        const list = filtered()
+        app.innerHTML =
+          renderHeader(W) + renderList(W, list) + renderTop(W, list) + renderPing(W, list) + renderDetail(W, list)
+      }
+
+      /* ================= events ================= */
+      document.getElementById('app').addEventListener('click', (e) => {
+        const t = e.target.closest('[data-sel],[data-sort],[data-theme]')
+        if (!t) return
+        if (t.dataset.sel != null) {
+          state.sel = +t.dataset.sel
+          render()
+        } else if (t.dataset.sort) {
+          state.sort = t.dataset.sort
+          render()
+        } else if (t.dataset.theme) {
+          state.theme = t.dataset.theme
+          document.documentElement.dataset.theme = state.theme
+          localStorage.setItem('tty-theme', state.theme)
+          render()
+        }
+      })
+      const inp = document.getElementById('cmdline')
+      inp.addEventListener('input', () => {
+        state.filter = inp.value
+        render()
+      })
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          inp.value = ''
+          state.filter = ''
+          render()
+        }
+      })
+
+      measure()
+      render()
+      let rt = null
+      window.addEventListener('resize', () => {
+        clearTimeout(rt)
+        rt = setTimeout(render, 120)
+      })
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => {
+          measure()
+          render()
+        })
+      }
+    </script>
+  </body>
+</html>

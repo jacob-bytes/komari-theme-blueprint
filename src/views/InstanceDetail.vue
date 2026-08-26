@@ -471,6 +471,19 @@ const trafficProgressClass = computed(() => {
 })
 
 const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.map(getDetailMetricCard))
+
+/** 复制文本到剪贴板（IP / 内核版本等），失败时提示 */
+async function copyText(value: string): Promise<void> {
+  if (!value)
+    return
+  try {
+    await navigator.clipboard.writeText(value)
+    window.$message?.success('已复制')
+  }
+  catch {
+    window.$message?.error('复制失败')
+  }
+}
 </script>
 
 <template>
@@ -497,7 +510,8 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
           <img :src="`/images/flags/${getRegionCode(data.region)}.svg`" :alt="getRegionAltText(data.region)" class="size-6">
           <span class="truncate">{{ data.name }}</span>
         </div>
-        <Badge :variant="data.online ? 'default' : 'destructive'" class="text-xs !rounded">
+        <Badge :variant="data.online ? 'default' : 'destructive'" class="text-xs !rounded flex items-center gap-1.5">
+          <span v-if="data.online" class="status-pulse" />
           {{ data.online ? '在线' : '离线' }}
         </Badge>
         <!-- 节点自定义标签 -->
@@ -658,7 +672,17 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
                   <Icon v-if="item.icon" :icon="item.icon" :width="14" :height="14" />
                   <span class="text-xs sm:text-sm">{{ item.label }}</span>
                 </div>
-                <span class="text-xs sm:text-sm break-words">{{ item.value }}</span>
+                <div class="flex min-w-0 gap-1.5 items-center">
+                  <span class="text-xs sm:text-sm break-words">{{ item.value }}</span>
+                  <button
+                    v-if="item.label === 'IP'" type="button"
+                    class="shrink-0 -mr-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                    title="复制 IP" aria-label="复制 IP"
+                    @click="copyText(item.value ?? '')"
+                  >
+                    <Icon icon="tabler:copy" :width="12" :height="12" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -680,6 +704,14 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
               <div class="flex min-w-0 gap-2 items-center">
                 <img v-if="item.label === '操作系统'" :src="getOSImage(data.os)" :alt="getOSName(data.os)" class="size-5 shrink-0">
                 <span class="text-xs sm:text-sm break-words">{{ item.value }}</span>
+                <button
+                  v-if="item.label === '内核版本'" type="button"
+                  class="shrink-0 ml-auto text-muted-foreground transition-colors hover:text-foreground"
+                  title="复制内核版本" aria-label="复制内核版本"
+                  @click="copyText(item.value ?? '')"
+                >
+                  <Icon icon="tabler:copy" :width="12" :height="12" />
+                </button>
               </div>
             </div>
           </div>
@@ -765,3 +797,30 @@ const metricCards = computed<MetricCard[]>(() => appStore.detailMetricCardOrder.
     </template>
   </div>
 </template>
+
+<style scoped>
+/* 在线状态 · 翡翠绿呼吸灯 */
+.status-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgb(16 185 129);
+  animation: status-pulse 1.6s ease-in-out infinite;
+}
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgb(16 185 129 / 0.5);
+  }
+  50% {
+    opacity: 0.65;
+    box-shadow: 0 0 0 4px rgb(16 185 129 / 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .status-pulse {
+    animation: none;
+  }
+}
+</style>

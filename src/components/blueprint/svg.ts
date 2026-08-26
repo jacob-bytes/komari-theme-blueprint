@@ -37,18 +37,6 @@ export function txt(
   return `<text x="${x}" y="${y}" font-size="${size}" fill="${fill}" text-anchor="${anchor}" font-weight="${weight}" letter-spacing="${ls}"${textLength ? ` textLength="${textLength}" lengthAdjust="spacingAndGlyphs"` : ''}>${esc(s)}</text>`
 }
 
-export function downsample(a: (number | null)[], n: number): (number | null)[] {
-  const out: (number | null)[] = []
-  const sz = a.length / n
-  for (let b = 0; b < n; b++) {
-    const from = Math.floor(b * sz)
-    const sl = a.slice(from, Math.max(Math.floor((b + 1) * sz), from + 1))
-    const vs = sl.filter(v => v != null) as number[]
-    out.push(vs.length ? Math.round(vs.reduce((x, y) => x + y, 0) / vs.length) : null)
-  }
-  return out
-}
-
 /**
  * 宽度感知截断（中文/全角=2 单位，其他=1 单位），超长加省略号。
  * 用于 SVG 文本：避免 textLength 强制拉伸短文字、也避免长文字溢出框。

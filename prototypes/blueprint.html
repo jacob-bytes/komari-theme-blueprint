@@ -1,0 +1,1799 @@
+<!--
+  Komari Monitor — theme prototype: "Infrastructure Blueprint / 工程蓝图"
+  ----------------------------------------------------------------------
+  Single-file static mockup of a server-monitoring dashboard styled as an
+  engineering drawing set (cyanotype blueprint / whiteprint).
+
+  Open directly in a browser (file://) — no build step, no external JS
+  libraries (only Google Fonts via CDN).
+
+  Concept: the dashboard is a DRAWING SET, not a web page:
+    DWG-01  General Arrangement (GA)   — bus + zones + equipment symbols
+    DWG-02  Equipment Schedule         — all-node data table
+    DWG-03+ Detail Sheets A–F          — per-node dimension-line metrics
+    Title block + revision table       — footer contract
+
+  Features:
+  - two paper modes: 晒图蓝 (cyanotype) / 白图 (whiteprint), localStorage
+  - GA topology drawn as SVG: bus bar, dashed zone boundaries, line-type
+    semantics (solid=online / amber=warn / dashed+break=offline),
+    trunk link (中转→落地), revision cloud around alarmed node
+  - section bubbles Ⓐ on GA jump to detail sheets
+  - metrics rendered as dimension lines with arrowheads
+  - 24h CPU "measurement curve" with LIMIT line + peak marker
+  - draw-in line animation (disabled under prefers-reduced-motion)
+-->
+<!doctype html>
+<html lang="zh-CN" data-mode="white">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>komari · 基础设施蓝图</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Oswald:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ---- two paper modes ---- */
+      :root,
+      [data-mode='white'] {
+        --paper: #f6f8fb;
+        --paper-deep: #eef2f7;
+        --ink: #1d4e89;
+        --faint: rgba(29, 78, 137, 0.55);
+        --ghost: rgba(29, 78, 137, 0.28);
+        --grid: rgba(29, 78, 137, 0.055);
+        --grid-major: rgba(29, 78, 137, 0.1);
+        --warn: #a86e00;
+        --alert: #c62f2f;
+        --frame: var(--ink);
+      }
+      [data-mode='blue'] {
+        --paper: #143d72;
+        --paper-deep: #0f3160;
+        --ink: #e9f2ff;
+        --faint: rgba(233, 242, 255, 0.48);
+        --ghost: rgba(233, 242, 255, 0.22);
+        --grid: rgba(233, 242, 255, 0.045);
+        --grid-major: rgba(233, 242, 255, 0.09);
+        --warn: #ffb000;
+        --alert: #ff8f86;
+        --frame: var(--ink);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--paper);
+        background-image:
+          radial-gradient(120% 90% at 50% 0%, transparent 55%, var(--paper-deep) 100%),
+          repeating-linear-gradient(0deg, var(--grid) 0, var(--grid) 1px, transparent 1px, transparent 12px),
+          repeating-linear-gradient(90deg, var(--grid) 0, var(--grid) 1px, transparent 1px, transparent 12px),
+          repeating-linear-gradient(
+            0deg,
+            var(--grid-major) 0,
+            var(--grid-major) 1px,
+            transparent 1px,
+            transparent 60px
+          ),
+          repeating-linear-gradient(
+            90deg,
+            var(--grid-major) 0,
+            var(--grid-major) 1px,
+            transparent 1px,
+            transparent 60px
+          );
+        color: var(--ink);
+        font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+        font-size: 13px;
+        line-height: 1.55;
+        padding: 18px 10px 40px;
+      }
+      #app {
+        max-width: 1160px;
+        margin: 0 auto;
+      }
+      .sheet {
+        border: 1.5px solid var(--frame);
+        outline: 2.5px solid var(--frame);
+        outline-offset: 5px;
+        padding: 26px 28px 22px;
+        position: relative;
+        margin: 9px;
+      }
+      /* grid-reference letters in the frame margin */
+      .ref {
+        position: absolute;
+        font-size: 9px;
+        color: var(--faint);
+        letter-spacing: 0.1em;
+      }
+      .ref.t,
+      .ref.b {
+        top: 4px;
+        transform: translateX(-50%);
+      }
+      .ref.b {
+        top: auto;
+        bottom: 3px;
+      }
+      .ref.l,
+      .ref.r {
+        left: 5px;
+        transform: translateY(-50%);
+      }
+      .ref.r {
+        left: auto;
+        right: 5px;
+      }
+
+      /* ---- typography ---- */
+      h1,
+      h2,
+      .oswald {
+        font-family: Oswald, 'JetBrains Mono', sans-serif;
+        text-transform: uppercase;
+      }
+      h1 {
+        font-size: 26px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        margin: 0;
+        line-height: 1.2;
+      }
+      h2 {
+        font-size: 15px;
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        margin: 0;
+      }
+      .sub {
+        color: var(--faint);
+        font-size: 11px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+      .dim-t {
+        color: var(--faint);
+      }
+
+      /* ---- header ---- */
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 16px;
+        flex-wrap: wrap;
+        border-bottom: 1.5px solid var(--frame);
+        padding-bottom: 14px;
+      }
+      .head-l .sub {
+        margin-top: 4px;
+      }
+      .head-r {
+        text-align: right;
+        font-size: 11px;
+        color: var(--faint);
+        letter-spacing: 0.06em;
+      }
+      .head-r b {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .modebtns {
+        display: inline-flex;
+        border: 1px solid var(--ink);
+        margin-top: 6px;
+      }
+      .modebtns button {
+        background: transparent;
+        border: 0;
+        color: var(--ink);
+        font: inherit;
+        cursor: pointer;
+        padding: 3px 10px;
+        letter-spacing: 0.1em;
+      }
+      .modebtns button + button {
+        border-left: 1px solid var(--ink);
+      }
+      .modebtns button[aria-pressed='true'] {
+        background: var(--ink);
+        color: var(--paper);
+      }
+
+      /* ---- legend ---- */
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 22px;
+        margin: 12px 0 4px;
+        font-size: 10.5px;
+        color: var(--faint);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .legend svg {
+        vertical-align: -2px;
+        margin-right: 5px;
+      }
+
+      /* ---- GA topology ---- */
+      .ga-wrap {
+        overflow-x: auto;
+        margin-top: 8px;
+      }
+      #ga {
+        display: block;
+        min-width: 760px;
+        width: 100%;
+        height: auto;
+      }
+      #ga text {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      #ga .sym {
+        cursor: pointer;
+      }
+      #ga .sym rect.body {
+        fill: transparent;
+        stroke: var(--ink);
+        stroke-width: 1.5;
+      }
+      #ga .sym:hover rect.body {
+        fill: rgba(233, 242, 255, 0.08);
+      }
+      [data-mode='white'] #ga .sym:hover rect.body {
+        fill: rgba(29, 78, 137, 0.07);
+      }
+      #ga .sym.off rect.body {
+        stroke-dasharray: 5 4;
+        stroke: var(--faint);
+      }
+      #ga .sym.off text {
+        fill: var(--faint);
+      }
+      #ga .bubble {
+        fill: transparent;
+        stroke: var(--ink);
+        cursor: pointer;
+      }
+      #ga .bubble text {
+        fill: var(--ink);
+        font-weight: 700;
+      }
+      #ga .bubble:hover {
+        stroke-width: 2.5;
+      }
+      #ga .zsym {
+        cursor: pointer;
+      }
+      #ga .zsym rect.body {
+        fill: transparent;
+        stroke: var(--ink);
+        stroke-width: 1.5;
+      }
+      #ga .zsym:hover rect.body {
+        fill: rgba(233, 242, 255, 0.08);
+      }
+      [data-mode='white'] #ga .zsym:hover rect.body {
+        fill: rgba(29, 78, 137, 0.07);
+      }
+      .draw {
+        stroke-dasharray: var(--len);
+        stroke-dashoffset: var(--len);
+        animation: draw 1.1s ease forwards;
+      }
+      @keyframes draw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .draw {
+          animation: none;
+          stroke-dashoffset: 0;
+        }
+      }
+
+      /* ---- stamps ---- */
+      .stamp {
+        display: inline-block;
+        border: 1.5px solid var(--alert);
+        color: var(--alert);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        padding: 1px 7px;
+        transform: rotate(-3deg);
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .stamp.ok {
+        border-color: var(--faint);
+        color: var(--faint);
+      }
+      .stamp.big {
+        font-size: 20px;
+        padding: 6px 18px;
+        border-width: 2.5px;
+        transform: rotate(-8deg);
+      }
+
+      /* ---- section titles ---- */
+      .sect {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin: 30px 0 4px;
+      }
+      .sect .no {
+        font-family: Oswald;
+        font-size: 12px;
+        color: var(--faint);
+        letter-spacing: 0.2em;
+      }
+      .sect .rule {
+        flex: 1;
+        border-bottom: 1px solid var(--ghost);
+      }
+
+      /* ---- schedule table ---- */
+      .tablewrap {
+        overflow-x: auto;
+      }
+      table.sched {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        min-width: 760px;
+      }
+      table.sched th {
+        font-family: Oswald;
+        font-weight: 500;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--faint);
+        text-align: left;
+        border-top: 1.5px solid var(--ink);
+        border-bottom: 1px solid var(--ink);
+        padding: 7px 8px;
+      }
+      table.sched td {
+        padding: 7px 8px;
+        border-bottom: 1px solid var(--ghost);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      table.sched tr.off td {
+        color: var(--faint);
+      }
+      table.sched .num {
+        text-align: right;
+      }
+      table.sched .hot {
+        color: var(--warn);
+        font-weight: 700;
+      }
+      table.sched .bad {
+        color: var(--alert);
+        font-weight: 700;
+      }
+      table.sched tbody tr.link {
+        cursor: pointer;
+      }
+      table.sched tbody tr.link:hover td {
+        background: rgba(233, 242, 255, 0.06);
+      }
+      [data-mode='white'] table.sched tbody tr.link:hover td {
+        background: rgba(29, 78, 137, 0.06);
+      }
+      table.sched tr.gsec td {
+        font-family: Oswald, sans-serif;
+        font-size: 10.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--faint);
+        border-top: 1.5px solid var(--ink);
+        padding: 6px 8px;
+      }
+
+      /* ---- detail sheets (accordion) ---- */
+      .detail {
+        border: 1.5px solid var(--frame);
+        padding: 0;
+        margin-top: 16px;
+        position: relative;
+      }
+      .detail .dhead {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 12px 18px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .detail.open .dhead {
+        border-bottom: 1px solid var(--ghost);
+      }
+      .detail .dhead .bub {
+        width: 26px;
+        height: 26px;
+        border: 1.5px solid var(--ink);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        flex: none;
+      }
+      .detail .dhead h2 {
+        font-size: 14px;
+      }
+      .detail .dhead .meta {
+        margin-left: auto;
+        color: var(--faint);
+        font-size: 10.5px;
+        letter-spacing: 0.1em;
+      }
+      .detail .dhead .stamp {
+        margin-left: 12px;
+      }
+      .detail .tw {
+        flex: none;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--faint);
+        font-size: 18px;
+        line-height: 1;
+        transition: transform 0.18s ease;
+      }
+      .detail.open .tw {
+        transform: rotate(45deg);
+      }
+      .detail .dbody {
+        display: none;
+        padding: 16px 18px 12px;
+      }
+      .detail.open .dbody {
+        display: block;
+      }
+      .detail.open .dhead .meta {
+        display: none;
+      }
+      @media (max-width: 720px) {
+        .detail.open .dhead .meta {
+          display: block;
+          width: 100%;
+          margin-left: 44px;
+        }
+      }
+      .dfoot {
+        display: flex;
+        gap: 0;
+        margin-top: 12px;
+        border: 1px solid var(--ghost);
+        font-size: 10px;
+        color: var(--faint);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        flex-wrap: wrap;
+      }
+      .dfoot div {
+        padding: 5px 10px;
+        border-right: 1px solid var(--ghost);
+      }
+      .dfoot div:last-child {
+        border-right: 0;
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+      }
+      .dims {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-bottom: 6px;
+      }
+      .dims svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .dims svg text {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .chartwrap {
+        margin-top: 8px;
+      }
+      .chartwrap svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .chartwrap svg text {
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .ctitle {
+        font-family: Oswald;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--faint);
+        border-bottom: 1px solid var(--ghost);
+        padding-bottom: 3px;
+        margin-bottom: 4px;
+      }
+      .specs {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .nplate {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+      }
+      .nplate td {
+        border: 1px solid var(--ghost);
+        padding: 4px 9px;
+      }
+      .nplate td.k {
+        color: var(--faint);
+        width: 5.5em;
+        font-family: Oswald, sans-serif;
+        font-size: 9.5px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .params {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px 20px;
+        border: 1px solid var(--ghost);
+        padding: 6px 10px;
+        font-size: 11px;
+        color: var(--faint);
+      }
+      .params b {
+        color: var(--ink);
+        font-weight: 700;
+      }
+      .voidbox {
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        color: var(--faint);
+        letter-spacing: 0.14em;
+        font-size: 12px;
+      }
+
+      /* ---- footer: revision table + title block ---- */
+      .foot {
+        margin-top: 34px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .rev table,
+      .tblock {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 10.5px;
+      }
+      .rev caption,
+      .tblock caption {
+        caption-side: top;
+        text-align: left;
+        font-family: Oswald;
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--faint);
+        padding-bottom: 5px;
+      }
+      .rev th,
+      .rev td {
+        border: 1px solid var(--ghost);
+        padding: 4px 8px;
+        text-align: left;
+        font-variant-numeric: tabular-nums;
+      }
+      .rev th {
+        color: var(--faint);
+        font-weight: 400;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-size: 9.5px;
+      }
+      .tblock {
+        border: 1.5px solid var(--ink);
+      }
+      .tblock td {
+        border: 1px solid var(--ghost);
+        padding: 6px 10px;
+        vertical-align: top;
+      }
+      .tblock td.k {
+        color: var(--faint);
+        font-size: 9px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        width: 34%;
+        font-family: Oswald;
+        font-weight: 400;
+      }
+      .tblock td.v {
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+      footer .fine {
+        margin-top: 14px;
+        color: var(--faint);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      /* ---- responsive ---- */
+      @media (max-width: 720px) {
+        body {
+          padding: 12px 5px 30px;
+          font-size: 12.5px;
+        }
+        .sheet {
+          padding: 18px 14px 16px;
+          margin: 7px;
+          outline-offset: 4px;
+        }
+        .ref {
+          display: none;
+        }
+        h1 {
+          font-size: 19px;
+        }
+        header {
+          align-items: flex-start;
+        }
+        .head-r {
+          text-align: left;
+        }
+        .foot {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="sheet" id="sheet">
+        <div class="ref t" style="left: 25%">B</div>
+        <div class="ref t" style="left: 50%">C</div>
+        <div class="ref t" style="left: 75%">D</div>
+        <div class="ref b" style="left: 25%">B</div>
+        <div class="ref b" style="left: 50%">C</div>
+        <div class="ref b" style="left: 75%">D</div>
+        <div class="ref l" style="top: 25%">2</div>
+        <div class="ref l" style="top: 50%">3</div>
+        <div class="ref l" style="top: 75%">4</div>
+        <div class="ref r" style="top: 25%">2</div>
+        <div class="ref r" style="top: 50%">3</div>
+        <div class="ref r" style="top: 75%">4</div>
+
+        <header>
+          <div class="head-l">
+            <h1>基础设施蓝图</h1>
+            <div class="sub">KOMARI INFRASTRUCTURE · 服务器监控总图</div>
+          </div>
+          <div class="head-r">
+            图号 <b>KOM-26-001</b> · 版本 <b>C</b> · <span id="hdr-date"></span><br />
+            比例 1:1 · 单位 % / ms
+            <br /><span class="modebtns">
+              <button data-mode="white" aria-pressed="true">白图</button>
+              <button data-mode="blue" aria-pressed="false">晒图蓝</button>
+            </span>
+            <br /><span class="modebtns" id="fleetBtns">
+              <button data-fleet="std" aria-pressed="true">标准 ×6</button>
+              <button data-fleet="stress" aria-pressed="false">压测 ×24</button>
+            </span>
+          </div>
+        </header>
+
+        <div class="legend" id="legend"></div>
+
+        <div class="sect">
+          <span class="no">DWG-01</span>
+          <h2>拓扑总图</h2>
+          <span class="rule"></span>
+        </div>
+        <div class="ga-wrap"><svg id="ga" viewBox="0 0 1040 560" role="img" aria-label="node topology"></svg></div>
+
+        <div id="zoneSect" class="sect" style="display: none">
+          <span class="no">DWG-01-A…F</span>
+          <h2>分区图</h2>
+          <span class="rule"></span
+          ><span class="sub" style="letter-spacing: 0.1em">点击总图分区下钻 · 异常分区默认展开</span>
+        </div>
+        <div id="zoneSheets"></div>
+
+        <div class="sect">
+          <span class="no">DWG-02</span>
+          <h2>设备表</h2>
+          <span class="rule"></span>
+        </div>
+        <div class="tablewrap">
+          <table class="sched" id="sched">
+            <thead>
+              <tr>
+                <th>位号</th>
+                <th>主机</th>
+                <th>区域</th>
+                <th>系统</th>
+                <th class="num">CPU%</th>
+                <th class="num">内存%</th>
+                <th class="num">硬盘%</th>
+                <th class="num">网络 ↓/↑ MB/s</th>
+                <th class="num">延迟 ms</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="sect">
+          <span class="no">DWG-03…</span>
+          <h2>节点明细图</h2>
+          <span class="rule"></span><span class="sub" style="letter-spacing: 0.1em">点击展开 · 默认仅展开告警图纸</span>
+        </div>
+        <div id="details"></div>
+
+        <footer>
+          <div class="foot">
+            <div class="rev">
+              <table>
+                <caption>
+                  修订记录
+                </caption>
+                <thead>
+                  <tr>
+                    <th>版本</th>
+                    <th>日期</th>
+                    <th>说明</th>
+                  </tr>
+                </thead>
+                <tbody id="revbody"></tbody>
+              </table>
+            </div>
+            <div class="tblock-wrap">
+              <table class="tblock">
+                <tbody>
+                  <tr>
+                    <td class="k">图名</td>
+                    <td class="v" colspan="3">KOMARI 基础设施监控</td>
+                  </tr>
+                  <tr>
+                    <td class="k">图号</td>
+                    <td class="v">KOM-26-001</td>
+                    <td class="k">版本</td>
+                    <td class="v" id="tb-rev">C</td>
+                  </tr>
+                  <tr>
+                    <td class="k">日期</td>
+                    <td class="v" id="tb-date">—</td>
+                    <td class="k">比例</td>
+                    <td class="v">1:1</td>
+                  </tr>
+                  <tr>
+                    <td class="k">绘制</td>
+                    <td class="v">KOMARI 自动绘制</td>
+                    <td class="k">张次</td>
+                    <td class="v" id="tb-sheet">1 OF 8</td>
+                  </tr>
+                  <tr>
+                    <td class="k">审核</td>
+                    <td class="v" colspan="3" id="tb-stamp"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="fine">
+            <span>—— 本图纸由 Komari Monitor 自动绘制</span>
+            <span>线断,即机失联</span>
+          </div>
+        </footer>
+      </div>
+    </div>
+
+    <script>
+      'use strict'
+      /* ================= mock data (same fleet as other prototypes) ================= */
+      const PTS = 288
+
+      function mulberry32(a) {
+        return function () {
+          a |= 0
+          a = (a + 0x6d2b79f5) | 0
+          let t = Math.imul(a ^ (a >>> 15), 1 | a)
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+        }
+      }
+      function genPing(n, seed) {
+        const rnd = mulberry32(seed),
+          out = []
+        for (let i = 0; i < PTS; i++) {
+          const t = (i / PTS) * 24
+          if (n.offline) {
+            out.push(
+              t >= 22
+                ? null
+                : Math.max(
+                    1,
+                    Math.round(
+                      n.ping + Math.sin((t / 24) * Math.PI * 2) * n.ping * 0.1 + (rnd() - 0.5) * n.ping * 0.15,
+                    ),
+                  ),
+            )
+            continue
+          }
+          out.push(
+            Math.max(
+              1,
+              Math.round(n.ping + Math.sin((t / 24) * Math.PI * 4) * n.ping * 0.08 + (rnd() - 0.5) * n.ping * 0.12),
+            ),
+          )
+        }
+        return out
+      }
+      function genCpu(n, seed) {
+        const rnd = mulberry32(seed),
+          out = []
+        const base = n.offline ? 30 : Math.max(5, n.cpu * 0.8)
+        const spikeH = 6 + (seed % 14)
+        for (let i = 0; i < PTS; i++) {
+          const t = (i / PTS) * 24
+          let v =
+            base * 0.7 +
+            base * 0.35 * Math.sin(((t - 6) / 24) * Math.PI * 2) +
+            base * 0.2 * Math.sin(t * 1.7 + seed) +
+            (rnd() - 0.5) * 8
+          if (!n.offline && t >= spikeH && t < spikeH + 1.5) v += 55 * (1 - Math.abs(t - (spikeH + 0.7)) / 0.8)
+          out.push(Math.min(98, Math.max(3, Math.round(v))))
+        }
+        return out
+      }
+      /* ================= fleet datasets ================= */
+      function finishNodes(nodes) {
+        nodes.forEach((n, i) => {
+          n.letter = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[i]
+          n.cpuHist = genCpu(n, 2000 + i * 131)
+          n.pingHist = genPing(n, 1000 + i * 77)
+        })
+        return nodes
+      }
+      function buildStd() {
+        const nodes = [
+          {
+            tag: 'HK-01',
+            host: 'hk-node-01',
+            name: '香港 01',
+            region: '亚太',
+            cpu: 34,
+            mem: 61,
+            disk: 42,
+            diskText: '84/200 GiB',
+            down: 12,
+            up: 3,
+            ping: 32,
+            status: 'ok',
+            os: 'Ubuntu 24.04 LTS',
+            kernel: '6.8.0-45-generic',
+            arch: 'x86_64',
+            virt: 'KVM',
+            uptime: 128,
+            load: [0.52, 0.48, 0.44],
+            proc: 182,
+            tcp: 342,
+            udp: 12,
+          },
+          {
+            tag: 'JP-02',
+            host: 'jp-tokyo-02',
+            name: '东京 02',
+            region: '亚太',
+            cpu: 18,
+            mem: 47,
+            disk: 38,
+            diskText: '76/200 GiB',
+            down: 8,
+            up: 2,
+            ping: 58,
+            status: 'ok',
+            os: 'Debian 12',
+            kernel: '6.1.0-18-amd64',
+            arch: 'x86_64',
+            virt: 'KVM',
+            uptime: 89,
+            load: [0.31, 0.29, 0.27],
+            proc: 142,
+            tcp: 210,
+            udp: 8,
+          },
+          {
+            tag: 'US-03',
+            host: 'us-la-03',
+            name: '洛杉矶 03',
+            region: '欧美',
+            cpu: 89,
+            mem: 92,
+            disk: 77,
+            diskText: '154/200 GiB',
+            down: 46,
+            up: 19,
+            ping: 142,
+            status: 'warn',
+            os: 'Ubuntu 22.04 LTS',
+            kernel: '5.15.0-91-generic',
+            arch: 'x86_64',
+            virt: 'KVM',
+            uptime: 45,
+            load: [3.82, 3.21, 2.94],
+            proc: 320,
+            tcp: 891,
+            udp: 24,
+          },
+          {
+            tag: 'DE-04',
+            host: 'de-frank-04',
+            name: '法兰克福 04',
+            region: '欧美',
+            cpu: 27,
+            mem: 55,
+            disk: 51,
+            diskText: '102/200 GiB',
+            down: 9,
+            up: 4,
+            ping: 171,
+            status: 'ok',
+            os: 'AlmaLinux 9.4',
+            kernel: '5.14.0-427-el9',
+            arch: 'x86_64',
+            virt: '独立服务器',
+            uptime: 210,
+            load: [0.91, 0.85, 0.8],
+            proc: 210,
+            tcp: 156,
+            udp: 10,
+          },
+          {
+            tag: 'SG-05',
+            host: 'sg-node-05',
+            name: '新加坡 05',
+            region: '亚太',
+            offline: true,
+            lastSeen: '2 小时前',
+            diskText: '96/200 GiB',
+            os: 'Ubuntu 22.04 LTS',
+            kernel: '5.15.0-91-generic',
+            arch: 'x86_64',
+            virt: 'KVM',
+            uptime: 332,
+            load: null,
+            proc: null,
+            tcp: null,
+            udp: null,
+          },
+          {
+            tag: 'CN-06',
+            host: 'cn-sh-06',
+            name: '上海 06',
+            region: '亚太',
+            cpu: 12,
+            mem: 33,
+            disk: 29,
+            diskText: '58/200 GiB',
+            down: 22,
+            up: 6,
+            ping: 9,
+            status: 'ok',
+            os: 'Debian 12',
+            kernel: '6.1.0-18-arm64',
+            arch: 'aarch64',
+            virt: '轻量云',
+            uptime: 56,
+            load: [0.22, 0.18, 0.15],
+            proc: 96,
+            tcp: 45,
+            udp: 4,
+          },
+        ]
+        nodes.forEach((n, i) => (n.sheet = 3 + i))
+        return finishNodes(nodes)
+      }
+      const STRESS_ZONES = [
+        { id: 'A', name: '亚太', prefix: 'HK', ping: 32, n: 6 },
+        { id: 'B', name: '中国', prefix: 'CN', ping: 10, n: 3 },
+        { id: 'C', name: '欧洲', prefix: 'EU', ping: 178, n: 5 },
+        { id: 'D', name: '美东', prefix: 'UE', ping: 165, n: 4 },
+        { id: 'E', name: '美西', prefix: 'UW', ping: 150, n: 3 },
+        { id: 'F', name: '东南亚', prefix: 'SG', ping: 42, n: 3 },
+      ]
+      const GROUP_DEFS = [
+        { id: 'WEB', name: 'Web 集群' },
+        { id: 'DB', name: '数据库集群' },
+        { id: 'RELAY', name: '中转组' },
+      ]
+      function buildStress() {
+        const rnd = mulberry32(20260825),
+          nodes = []
+        const OSES = [
+          ['Ubuntu 24.04 LTS', '6.8.0-45-generic'],
+          ['Ubuntu 22.04 LTS', '5.15.0-91-generic'],
+          ['Debian 12', '6.1.0-18-amd64'],
+          ['AlmaLinux 9.4', '5.14.0-427-el9'],
+          ['Rocky Linux 9.4', '5.14.0-427-el9'],
+        ]
+        const ARCHS = ['x86_64', 'x86_64', 'x86_64', 'aarch64']
+        const VIRTS = ['KVM', 'KVM', 'VMware', '独立服务器', '轻量云']
+        STRESS_ZONES.forEach((z) => {
+          for (let i = 1; i <= z.n; i++) {
+            const disk = 20 + Math.floor(rnd() * 62)
+            const os = OSES[Math.floor(rnd() * OSES.length)]
+            const cpu = 8 + Math.floor(rnd() * 82)
+            const lb = (cpu / 25) * (0.7 + rnd() * 0.6)
+            const off = rnd() < 0.08
+            nodes.push({
+              tag: z.prefix + '-' + String(i).padStart(2, '0'),
+              host: z.prefix.toLowerCase() + '-node-' + String(i).padStart(2, '0'),
+              name: z.name + ' ' + String(i).padStart(2, '0'),
+              region: z.name,
+              zone: z.id,
+              cpu: cpu,
+              mem: 22 + Math.floor(rnd() * 68),
+              disk: disk,
+              diskText: Math.round(disk * 2) + '/200 GiB',
+              down: 1 + Math.floor(rnd() * 40),
+              up: 1 + Math.floor(rnd() * 15),
+              ping: Math.max(5, Math.round(z.ping * (0.8 + rnd() * 0.5))),
+              status: 'ok',
+              group: null,
+              os: os[0],
+              kernel: os[1],
+              arch: ARCHS[Math.floor(rnd() * ARCHS.length)],
+              virt: VIRTS[Math.floor(rnd() * VIRTS.length)],
+              uptime: 3 + Math.floor(rnd() * 380),
+              load: [+lb.toFixed(2), +(lb * 0.95).toFixed(2), +(lb * 0.9).toFixed(2)],
+              proc: 80 + Math.floor(rnd() * 320),
+              tcp: 20 + Math.floor(rnd() * 780),
+              udp: Math.floor(rnd() * 36),
+            })
+          }
+        })
+        const byTag = (t) => nodes.find((n) => n.tag === t)
+        ;['HK-03', 'CN-01', 'EU-01', 'UE-01', 'UW-02', 'SG-01'].forEach((t) => (byTag(t).group = 'WEB'))
+        ;['HK-04', 'EU-02', 'UE-02', 'UW-01'].forEach((t) => (byTag(t).group = 'DB'))
+        ;['HK-01', 'HK-02'].forEach((t) => (byTag(t).group = 'RELAY'))
+        byTag('UW-01').landing = true
+        byTag('EU-01').status = 'warn'
+        byTag('HK-04').status = 'warn'
+        byTag('SG-03').offline = true
+        byTag('SG-03').lastSeen = '3 小时前'
+        byTag('UE-04').offline = true
+        byTag('UE-04').lastSeen = '2 小时前'
+        nodes.forEach((n, i) => (n.sheet = 9 + i))
+        return finishNodes(nodes)
+      }
+      let MODE = new URLSearchParams(location.search).get('fleet') || localStorage.getItem('bp-fleet') || 'std'
+      if (MODE !== 'std' && MODE !== 'stress') MODE = 'std'
+      let NODES = MODE === 'stress' ? buildStress() : buildStd()
+      const TOTAL = () => 8 + (MODE === 'stress' ? NODES.length : 0)
+      function rollup(items) {
+        const on = items.filter((n) => !n.offline).length
+        const w = items.filter((n) => n.status === 'warn').length
+        return { on: on, w: w, off: items.length - on }
+      }
+      function downsample(a, n) {
+        const out = [],
+          sz = a.length / n
+        for (let b = 0; b < n; b++) {
+          const from = Math.floor(b * sz)
+          const sl = a.slice(from, Math.max(Math.floor((b + 1) * sz), from + 1))
+          const vs = sl.filter((v) => v != null)
+          out.push(vs.length ? Math.round(vs.reduce((x, y) => x + y, 0) / vs.length) : null)
+        }
+        return out
+      }
+
+      /* ================= helpers ================= */
+      const INK = 'var(--ink)',
+        FAINT = 'var(--faint)',
+        GHOST = 'var(--ghost)',
+        WARN = 'var(--warn)',
+        ALERT = 'var(--alert)'
+      function lineLen(x1, y1, x2, y2) {
+        return Math.round(Math.hypot(x2 - x1, y2 - y1)) + 2
+      }
+      function polyLen(pts) {
+        let l = 0
+        for (let i = 1; i < pts.length; i++) l += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])
+        return Math.round(l) + 2
+      }
+      function seg(x1, y1, x2, y2, cls, stroke, w) {
+        const s = stroke || INK,
+          sw = w || 1.5
+        return `<line class="draw" style="--len:${lineLen(x1, y1, x2, y2)}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${s}" stroke-width="${sw}"${cls ? ` class="${cls}"` : ''}/>`
+      }
+      function txt(x, y, s, size, fill, anchor, weight, ls) {
+        return `<text x="${x}" y="${y}" font-size="${size}" fill="${fill || INK}"${anchor ? ` text-anchor="${anchor}"` : ''}${weight ? ` font-weight="${weight}"` : ''} letter-spacing="${ls || 1}">${s}</text>`
+      }
+      function cloudRect(x, y, w, h, r) {
+        r = r || 11
+        const nx = Math.max(2, Math.round(w / (2 * r))),
+          ny = Math.max(2, Math.round(h / (2 * r)))
+        const sx = w / nx,
+          sy = h / ny
+        let d = `M ${x} ${y}`
+        for (let i = 0; i < nx; i++) d += ` a ${(sx / 2).toFixed(1)} ${r} 0 0 1 ${sx.toFixed(1)} 0`
+        for (let i = 0; i < ny; i++) d += ` a ${r} ${(sy / 2).toFixed(1)} 0 0 1 0 ${sy.toFixed(1)}`
+        for (let i = 0; i < nx; i++) d += ` a ${(sx / 2).toFixed(1)} ${r} 0 0 1 ${(-sx).toFixed(1)} 0`
+        for (let i = 0; i < ny; i++) d += ` a ${r} ${(sy / 2).toFixed(1)} 0 0 1 0 ${(-sy).toFixed(1)}`
+        return d + ' z'
+      }
+      function stamp(text, cls) {
+        return `<span class="stamp ${cls || ''}">${text}</span>`
+      }
+
+      /* ================= legend ================= */
+      function renderLegend() {
+        const el = document.getElementById('legend')
+        el.innerHTML = [
+          `<svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="${INK}" stroke-width="1.5"/></svg>在线`,
+          `<svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="${WARN}" stroke-width="2.5"/></svg>高负载`,
+          `<svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="${FAINT}" stroke-width="1.5" stroke-dasharray="4 4"/></svg>离线`,
+          `<svg width="34" height="10"><line x1="0" y1="2" x2="34" y2="2" stroke="${INK}" stroke-width="1.2"/><line x1="0" y1="7" x2="34" y2="7" stroke="${INK}" stroke-width="1.2"/></svg>中转干线`,
+          `<svg width="34" height="8"><line x1="0" y1="4" x2="34" y2="4" stroke="${INK}" stroke-width="3"/></svg>分组边界`,
+          `<svg width="30" height="14"><path d="${cloudRect(2, 3, 26, 9, 6)}" fill="none" stroke="${ALERT}" stroke-width="1.2"/></svg>修订云线`,
+          `<svg width="16" height="14"><circle cx="8" cy="7" r="6" fill="none" stroke="${INK}" stroke-width="1.2"/></svg>详图索引`,
+        ].join('')
+      }
+
+      /* ================= GA topology ================= */
+      const GEO = {
+        HK: { x: 100, y: 180 },
+        JP: { x: 300, y: 180 },
+        CN: { x: 100, y: 330 },
+        SG: { x: 300, y: 330 },
+        US: { x: 640, y: 180 },
+        DE: { x: 640, y: 330 },
+      }
+      const NW = 150,
+        NH = 70
+      function renderGA() {
+        const s = []
+        /* bus bar */
+        s.push(`<g class="draw" style="--len:2000">`)
+        s.push(`<rect x="60" y="58" width="920" height="22" fill="none" stroke="${INK}" stroke-width="2"/>`)
+        s.push(`<rect x="66" y="64" width="908" height="10" fill="none" stroke="${GHOST}" stroke-width="1"/>`)
+        s.push(`</g>`)
+        s.push(txt(70, 73, '总线 · komari-core · 轮询 5s · 100% 在线', 11, INK, 'start', 700, 2))
+        /* zone boundaries */
+        s.push(
+          `<rect class="draw" style="--len:1800" x="70" y="140" width="490" height="380" fill="none" stroke="${FAINT}" stroke-width="1.2" stroke-dasharray="7 5"/>`,
+        )
+        s.push(
+          `<rect class="draw" style="--len:1500" x="600" y="140" width="370" height="380" fill="none" stroke="${FAINT}" stroke-width="1.2" stroke-dasharray="7 5"/>`,
+        )
+        s.push(txt(80, 508, '亚太 · 4 台', 11, FAINT, 'start', 400, 2))
+        s.push(txt(610, 508, '欧美 · 2 台', 11, FAINT, 'start', 400, 2))
+        /* zone spines from bus */
+        s.push(seg(315, 80, 315, 470))
+        s.push(seg(830, 80, 830, 370))
+        /* zone A branches */
+        s.push(seg(315, 160, 175, 160))
+        s.push(seg(175, 160, 175, 180))
+        s.push(seg(315, 160, 375, 160))
+        s.push(seg(375, 160, 375, 180))
+        s.push(seg(315, 310, 175, 310))
+        s.push(seg(175, 310, 175, 330))
+        /* SG branch: offline = dashed + break ✕ */
+        s.push(
+          `<line class="draw" style="--len:130" x1="315" y1="310" x2="375" y2="310" stroke="${FAINT}" stroke-width="1.5" stroke-dasharray="5 5"/>`,
+        )
+        s.push(
+          `<line class="draw" style="--len:70" x1="375" y1="310" x2="375" y2="330" stroke="${FAINT}" stroke-width="1.5" stroke-dasharray="5 5"/>`,
+        )
+        s.push(txt(345, 304, '✕', 14, ALERT, 'middle', 700))
+        s.push(txt(383, 326, '最后在线 2h', 8.5, FAINT, 'start', 400, 1))
+        /* zone B branches — US branch amber (warn) */
+        s.push(seg(830, 160, 715, 160, '', WARN, 2.5))
+        s.push(seg(715, 160, 715, 180, '', WARN, 2.5))
+        s.push(seg(830, 310, 715, 310))
+        s.push(seg(715, 310, 715, 330))
+        /* trunk HK → US: double line routed below node rows, hop over zone A spine */
+        const trunk = 'M250,215 H275 V285 H305 A10 10 0 0 1 325,285 H615 V215 H640'
+        s.push(`<path class="draw" style="--len:560" d="${trunk}" fill="none" stroke="${INK}" stroke-width="5"/>`)
+        s.push(`<path d="${trunk}" fill="none" stroke="var(--paper)" stroke-width="2.5"/>`)
+        s.push(txt(470, 277, '中转干线 · 中转→落地', 9.5, FAINT, 'middle', 400, 2))
+        /* node symbols */
+        NODES.forEach((n) => {
+          const g = GEO[n.tag.split('-')[0]]
+          const off = n.offline,
+            warn = n.status === 'warn'
+          s.push(
+            `<g class="sym${off ? ' off' : ''}" data-host="${n.host}" tabindex="0" role="button" aria-label="detail ${n.host}">`,
+          )
+          s.push(`<rect class="body" x="${g.x}" y="${g.y}" width="${NW}" height="${NH}"/>`)
+          s.push(txt(g.x + 10, g.y + 22, n.tag, 15, INK, 'start', 700, 2))
+          s.push(txt(g.x + 10, g.y + 38, n.host, 9.5, off ? FAINT : FAINT, 'start', 400, 0.5))
+          if (off) {
+            s.push(txt(g.x + 10, g.y + 58, '作废 · 离线', 10, FAINT, 'start', 700, 1))
+          } else {
+            const c = warn ? WARN : n.cpu >= 70 ? WARN : INK
+            s.push(txt(g.x + 10, g.y + 58, 'CPU ' + n.cpu + '%', 10.5, c, 'start', 700, 1))
+            s.push(txt(g.x + NW - 10, g.y + 58, 'MEM ' + n.mem + '%', 10.5, n.mem >= 70 ? WARN : FAINT, 'end', 400, 1))
+          }
+          /* status marker */
+          if (warn) s.push(txt(g.x + NW - 12, g.y + 22, '▲', 12, WARN, 'end', 700))
+          else if (!off)
+            s.push(
+              `<circle cx="${g.x + NW - 14}" cy="${g.y + 17}" r="4" fill="none" stroke="${INK}" stroke-width="1.5"/>`,
+            )
+          s.push(`</g>`)
+          /* revision cloud around US-03 */
+          if (warn) {
+            s.push(
+              `<path class="draw" style="--len:900" d="${cloudRect(g.x - 12, g.y - 14, NW + 24, NH + 28, 20)}" fill="none" stroke="${ALERT}" stroke-width="1.6"/>`,
+            )
+            s.push(txt(g.x, g.y + NH + 40, '修订 B · 负载偏高', 10, ALERT, 'start', 700, 1))
+          }
+          /* section bubble */
+          const bx = g.x + NW + 2,
+            by = g.y + NH + 2
+          s.push(
+            `<g class="bubble" data-host="${n.host}" tabindex="0" role="button" aria-label="open detail ${n.host}">`,
+          )
+          s.push(`<circle cx="${bx}" cy="${by}" r="11" stroke="${INK}" stroke-width="1.5"/>`)
+          s.push(txt(bx, by + 4, n.letter, 11, INK, 'middle', 700))
+          s.push(`</g>`)
+        })
+        /* frame corner note */
+        s.push(txt(1020, 548, 'KOM-26-001 · 总图', 9, FAINT, 'end', 400, 2))
+        document.getElementById('ga').innerHTML = s.join('')
+      }
+
+      /* ================= stress-mode master GA: aggregated zone symbols ================= */
+      function renderGAStress() {
+        const s = []
+        const r = rollup(NODES)
+        s.push(`<g class="draw" style="--len:2000">`)
+        s.push(`<rect x="60" y="46" width="920" height="22" fill="none" stroke="${INK}" stroke-width="2"/>`)
+        s.push(`<rect x="66" y="52" width="908" height="10" fill="none" stroke="${GHOST}" stroke-width="1"/>`)
+        s.push(`</g>`)
+        s.push(
+          txt(
+            70,
+            61,
+            `总线 · komari-core · 轮询 5s · ${NODES.length} 台 · 正常 ${r.on} · 告警 ${r.w} · 离线 ${r.off}`,
+            11,
+            INK,
+            'start',
+            700,
+            2,
+          ),
+        )
+        /* left spine feeding both rows */
+        s.push(seg(45, 68, 45, 435))
+        s.push(seg(45, 245, 70, 245))
+        s.push(seg(45, 435, 70, 435))
+        const ZX = [70, 385, 700],
+          ZY = [170, 360],
+          ZW = 270,
+          ZH = 150
+        STRESS_ZONES.forEach((z, i) => {
+          const x = ZX[i % 3],
+            y = ZY[Math.floor(i / 3)]
+          const items = NODES.filter((n) => n.zone === z.id)
+          const zr = rollup(items)
+          const warn = zr.w > 0,
+            off = zr.off > 0
+          s.push(`<g class="zsym" data-zone="${z.id}" tabindex="0" role="button" aria-label="zone ${z.id} ${z.name}">`)
+          s.push(
+            `<rect class="body" x="${x}" y="${y}" width="${ZW}" height="${ZH}" stroke="${warn ? WARN : INK}" stroke-width="${warn ? 2 : 1.5}"${off ? ' stroke-dasharray="8 4"' : ''}/>`,
+          )
+          s.push(txt(x + 14, y + 30, z.name, 16, INK, 'start', 700, 2))
+          s.push(
+            txt(x + 14, y + 52, z.prefix.toLowerCase() + '-* · ' + items.length + ' 台', 11, FAINT, 'start', 400, 1),
+          )
+          s.push(txt(x + 14, y + 88, '×' + items.length + ' 台', 12, INK, 'start', 700, 1.5))
+          s.push(txt(x + 14, y + 118, '● ' + zr.on, 12, INK, 'start', 700, 1))
+          if (zr.w) s.push(txt(x + 100, y + 118, '▲ ' + zr.w, 12, WARN, 'start', 700, 1))
+          if (zr.off) s.push(txt(x + 170, y + 118, '✕ ' + zr.off, 12, ALERT, 'start', 700, 1))
+          s.push(txt(x + 14, y + 142, '第 ' + (3 + i) + ' 张 →', 9, FAINT, 'start', 400, 1))
+          s.push(`</g>`)
+          const bx = x + ZW - 2,
+            by = y + ZH - 2
+          s.push(`<g class="bubble" data-zone="${z.id}" tabindex="0" role="button" aria-label="打开分区 ${z.name}">`)
+          s.push(`<circle cx="${bx}" cy="${by}" r="11" stroke="${INK}" stroke-width="1.5"/>`)
+          s.push(txt(bx, by + 4, String(i + 1), 11, INK, 'middle', 700))
+          s.push(`</g>`)
+        })
+        s.push(txt(1020, 548, 'KOM-26-001 · 总图', 9, FAINT, 'end', 400, 2))
+        document.getElementById('ga').innerHTML = s.join('')
+      }
+
+      /* ================= stress-mode zone sheets (accordion) ================= */
+      function renderZoneSheets() {
+        const wrap = document.getElementById('zoneSheets')
+        if (MODE !== 'stress') {
+          wrap.innerHTML = ''
+          return
+        }
+        wrap.innerHTML = STRESS_ZONES.map((z, zi) => {
+          const items = NODES.filter((n) => n.zone === z.id)
+          const zr = rollup(items)
+          /* 分组边界框:每框一个组,框内节点 2 列排布 */
+          const groups = [
+            ...GROUP_DEFS.filter((g) => items.some((n) => n.group === g.id)).map((g) => ({
+              label: g.name,
+              relay: g.id === 'RELAY',
+              items: items.filter((n) => n.group === g.id),
+            })),
+            { label: '未分组', relay: false, items: items.filter((n) => !n.group) },
+          ].filter((g) => g.items.length)
+          const boxW = 396,
+            nodeW = 172,
+            nodeH = 46,
+            gap = 10,
+            boxGap = 16,
+            rowGap = 30,
+            top = 44
+          const boxes = groups.map((g) => ({ ...g, h: 34 + Math.ceil(g.items.length / 2) * (nodeH + gap) + 4 }))
+          const layout = []
+          let ly = top,
+            rowMax = 0
+          boxes.forEach((b, i) => {
+            if (i > 0 && i % 2 === 0) {
+              ly += rowMax + rowGap
+              rowMax = 0
+            }
+            layout.push({ b: b, x: 44 + (i % 2) * (boxW + boxGap), y: ly })
+            rowMax = Math.max(rowMax, b.h)
+          })
+          const H = ly + rowMax + 10
+          const s = []
+          s.push(txt(8, 22, `${z.name} · ${items.length} 台 · 图 DWG-01-0${zi + 1}`, 11, FAINT, 'start', 700, 2))
+          const stubYs = layout.map((L) => L.y + L.b.h / 2)
+          s.push(seg(24, 28, 24, Math.max.apply(null, stubYs)))
+          /* stubs first, boxes after (paper fill hides pass-through lines) */
+          layout.forEach((L) => {
+            s.push(seg(24, L.y + L.b.h / 2, L.x, L.y + L.b.h / 2, '', INK, L.b.relay ? 2.5 : 1.2))
+          })
+          layout.forEach((L) => {
+            const x = L.x,
+              y = L.y,
+              b = L.b
+            s.push(
+              `<rect x="${x}" y="${y}" width="${boxW}" height="${b.h}" fill="var(--paper)" stroke="${b.relay ? WARN : FAINT}" stroke-width="${b.relay ? 1.8 : 1.2}"${b.relay ? '' : ' stroke-dasharray="6 4"'}/>`,
+            )
+            s.push(seg(x, y + b.h / 2, x + 8, y + b.h / 2, '', INK, b.relay ? 2.5 : 1.2))
+            s.push(
+              txt(x + 10, y + 17, `${b.label} · ${b.items.length} 台`, 10.5, b.relay ? WARN : FAINT, 'start', 700, 1.5),
+            )
+            if (b.relay) s.push(txt(x + boxW - 10, y + 17, '干线 → UW-01(美西)落地', 9, FAINT, 'end', 400, 1))
+            b.items.forEach((n, j) => {
+              const nx = x + 12 + (j % 2) * (nodeW + gap),
+                ny = y + 26 + Math.floor(j / 2) * (nodeH + gap)
+              s.push(
+                `<g class="sym${n.offline ? ' off' : ''}" data-host="${n.host}" tabindex="0" role="button" aria-label="明细 ${n.host}">`,
+              )
+              s.push(
+                `<rect class="body" x="${nx}" y="${ny}" width="${nodeW}" height="${nodeH}"${n.status === 'warn' && !n.offline ? ` stroke="${WARN}" stroke-width="1.8"` : ''}/>`,
+              )
+              s.push(txt(nx + 8, ny + 19, n.tag, 12.5, INK, 'start', 700, 1))
+              if (n.offline) s.push(txt(nx + nodeW - 8, ny + 19, '✕', 11, ALERT, 'end', 700))
+              else if (n.status === 'warn') s.push(txt(nx + nodeW - 8, ny + 19, '▲', 11, WARN, 'end', 700))
+              else
+                s.push(
+                  `<circle cx="${nx + nodeW - 12}" cy="${ny + 15}" r="3.5" fill="none" stroke="${INK}" stroke-width="1.2"/>`,
+                )
+              s.push(
+                txt(
+                  nx + 8,
+                  ny + 36,
+                  n.offline ? '作废 · 最后在线 ' + n.lastSeen : n.host,
+                  8.5,
+                  FAINT,
+                  'start',
+                  400,
+                  0.4,
+                ),
+              )
+              if (!n.offline)
+                s.push(
+                  txt(nx + nodeW - 8, ny + 36, 'CPU ' + n.cpu + '%', 9.5, n.cpu >= 85 ? WARN : FAINT, 'end', 700, 0.5),
+                )
+              s.push(`</g>`)
+            })
+          })
+          const st = zr.w ? stamp('有告警') : zr.off ? stamp('部分离线') : ''
+          const head = `<div class="dhead" tabindex="0" role="button" aria-expanded="false">
+      <span class="bub">${zi + 1}</span>
+      <h2>${z.name}</h2>
+      <span class="meta">${items.length} 台 · 正常 ${zr.on} · 告警 ${zr.w} · 离线 ${zr.off} · 图 DWG-01-0${zi + 1} · 第 ${3 + zi} 张 / 共 ${TOTAL()} 张</span>
+      ${st}<span class="tw">+</span></div>`
+          return `<div class="detail" id="zone-${z.id}">${head}<div class="dbody"><div class="ga-wrap"><svg viewBox="0 0 1000 ${H}" role="img" aria-label="分区 ${z.name}">${s.join('')}</svg></div></div></div>`
+        }).join('')
+        const az = STRESS_ZONES.find((z) =>
+          NODES.filter((n) => n.zone === z.id).some((n) => n.status === 'warn' || n.offline),
+        )
+        if (az) {
+          const el = document.getElementById('zone-' + az.id)
+          if (el) el.classList.add('open')
+        }
+      }
+
+      /* ================= schedule table ================= */
+      function schedRow(n) {
+        const osShort = n.os ? n.os.replace(' LTS', '').replace(' Linux', '') : '—'
+        if (n.offline)
+          return `<tr class="off link" data-host="${n.host}"><td>${n.tag}</td><td>${n.host}</td><td>${n.region}</td><td>${osShort}</td><td class="num">—</td><td class="num">—</td><td class="num">—<br><span style="font-size:9px">${n.diskText}</span></td><td class="num">—</td><td class="num">—</td><td>${stamp('已离线')}</td></tr>`
+        const hot = (v) => (v >= 85 ? 'bad' : v >= 70 ? 'hot' : '')
+        return `<tr class="link" data-host="${n.host}">
+    <td>${n.tag}</td><td>${n.host}</td><td>${n.region}</td><td>${osShort}</td>
+    <td class="num ${hot(n.cpu)}">${n.cpu}</td>
+    <td class="num ${hot(n.mem)}">${n.mem}</td>
+    <td class="num ${hot(n.disk)}">${n.disk}<br><span style="font-size:9px;color:var(--faint)">${n.diskText}</span></td>
+    <td class="num">↓${n.down} / ↑${n.up}</td>
+    <td class="num ${n.ping >= 150 ? 'hot' : ''}">${n.ping}</td>
+    <td>${n.status === 'warn' ? stamp('负载偏高') : stamp('正常', 'ok')}</td>
+  </tr>`
+      }
+      function renderSched() {
+        const tb = document.querySelector('#sched tbody')
+        if (MODE === 'std') {
+          tb.innerHTML = NODES.slice()
+            .sort((a, b) => (a.offline ? 1 : 0) - (b.offline ? 1 : 0))
+            .map(schedRow)
+            .join('')
+          return
+        }
+        const secs = [
+          ...GROUP_DEFS.map((g) => ({ label: g.name, items: NODES.filter((n) => n.group === g.id) })),
+          { label: '未分组', items: NODES.filter((n) => !n.group) },
+        ].filter((s) => s.items.length)
+        tb.innerHTML = secs
+          .map((sec) => {
+            const zr = rollup(sec.items)
+            return (
+              `<tr class="gsec"><td colspan="10">▉ ${sec.label} · ${sec.items.length} 台 · 正常 ${zr.on} · 告警 ${zr.w} · 离线 ${zr.off}</td></tr>` +
+              sec.items.map(schedRow).join('')
+            )
+          })
+          .join('')
+      }
+
+      /* ================= dimension-line metric ================= */
+      function dimLine(label, val, unit, max, warnAt) {
+        const W = 560,
+          H = 26,
+          x0 = 86,
+          x1 = W - 70,
+          y = 17
+        const f = Math.min(1, val / max)
+        const fx = x0 + (x1 - x0) * f
+        const hot = val >= warnAt
+        const col = hot ? WARN : INK
+        const s = []
+        s.push(`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label} ${val}${unit}">`)
+        /* extension ticks */
+        s.push(`<line x1="${x0}" y1="6" x2="${x0}" y2="${H - 3}" stroke="${FAINT}" stroke-width="1"/>`)
+        s.push(`<line x1="${x1}" y1="6" x2="${x1}" y2="${H - 3}" stroke="${FAINT}" stroke-width="1"/>`)
+        /* base line + arrows pointing outward */
+        s.push(`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${GHOST}" stroke-width="1"/>`)
+        s.push(`<polygon points="${x0},${y} ${x0 + 7},${y - 3} ${x0 + 7},${y + 3}" fill="${FAINT}"/>`)
+        s.push(`<polygon points="${x1},${y} ${x1 - 7},${y - 3} ${x1 - 7},${y + 3}" fill="${FAINT}"/>`)
+        /* measured segment */
+        s.push(`<line x1="${x0}" y1="${y}" x2="${fx}" y2="${y}" stroke="${col}" stroke-width="2.5"/>`)
+        /* labels */
+        s.push(`<text x="0" y="${y + 4}" font-size="10.5" fill="${FAINT}" letter-spacing="1">${label}</text>`)
+        s.push(
+          `<text x="${W}" y="${y + 4}" font-size="11" fill="${col}" text-anchor="end" font-weight="700">${val}<tspan font-size="8.5" fill="${FAINT}">${unit}</tspan></text>`,
+        )
+        s.push(`</svg>`)
+        return s.join('')
+      }
+      /* ================= 24h measurement curve ================= */
+      function chart(n, histKey, unit, fixedScale, limit) {
+        const data = n[histKey]
+        const W = 560,
+          H = 132,
+          L = 46,
+          R = 8,
+          T = 12,
+          B = 22
+        const iw = W - L - R,
+          ih = H - T - B
+        const pts = downsample(data, 112)
+        let lo, hi
+        if (fixedScale) {
+          lo = 0
+          hi = 100
+        } else {
+          const vs = pts.filter((v) => v != null)
+          if (!vs.length) {
+            lo = 0
+            hi = 1
+          } else {
+            const mn = Math.min.apply(null, vs),
+              mx = Math.max.apply(null, vs)
+            const pad = mx - mn || mx * 0.3 || 1
+            lo = Math.max(0, Math.floor(mn - pad * 0.3))
+            hi = Math.ceil(mx + pad * 0.3)
+          }
+        }
+        const X = (i) => L + (i / (pts.length - 1)) * iw
+        const Y = (v) => T + (1 - (v - lo) / (hi - lo)) * ih
+        const s = []
+        s.push(`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="24h ${unit} curve">`)
+        /* h-grid: 4 divisions */
+        for (let k = 0; k <= 4; k++) {
+          const v = lo + ((hi - lo) * k) / 4
+          s.push(
+            `<line x1="${L}" y1="${Y(v)}" x2="${W - R}" y2="${Y(v)}" stroke="${k === 0 ? FAINT : GHOST}" stroke-width="1"/>`,
+          )
+          s.push(
+            `<text x="${L - 5}" y="${Y(v) + 3.5}" font-size="8.5" fill="${FAINT}" text-anchor="end">${Math.round(v)}</text>`,
+          )
+        }
+        s.push(`<text x="${L - 5}" y="${T - 3}" font-size="8" fill="${FAINT}" text-anchor="end">${unit}</text>`)
+        /* time ticks every 4h */
+        for (let h = 0; h <= 24; h += 4) {
+          const x = L + (h / 24) * iw
+          s.push(`<line x1="${x}" y1="${T}" x2="${x}" y2="${T + ih}" stroke="${GHOST}" stroke-width="1"/>`)
+          s.push(
+            `<text x="${x}" y="${H - 6}" font-size="8.5" fill="${FAINT}" text-anchor="middle">${String(h).padStart(2, '0')}:00</text>`,
+          )
+        }
+        /* limit line */
+        if (limit != null && limit >= lo && limit <= hi) {
+          s.push(
+            `<line x1="${L}" y1="${Y(limit)}" x2="${W - R}" y2="${Y(limit)}" stroke="${ALERT}" stroke-width="1" stroke-dasharray="5 4"/>`,
+          )
+          s.push(
+            `<text x="${W - R}" y="${Y(limit) - 4}" font-size="8.5" fill="${ALERT}" text-anchor="end" letter-spacing="1">阈值 ${limit}</text>`,
+          )
+        }
+        /* curve */
+        let d = '',
+          peak = null,
+          pi = 0
+        pts.forEach((v, i) => {
+          if (v == null) return
+          if (peak == null || v > peak) {
+            peak = v
+            pi = i
+          }
+        })
+        pts.forEach((v, i) => {
+          if (v == null) return
+          d += (d ? ' L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)
+        })
+        s.push(`<path d="${d}" fill="none" stroke="${INK}" stroke-width="1.6"/>`)
+        /* peak marker */
+        if (peak != null) {
+          s.push(`<circle cx="${X(pi)}" cy="${Y(peak)}" r="3" fill="none" stroke="${WARN}" stroke-width="1.5"/>`)
+          const anchor = pi > pts.length - 14 ? 'end' : 'start'
+          s.push(
+            `<text x="${X(pi) + (anchor === 'end' ? -6 : 6)}" y="${Y(peak) - 5}" font-size="9" fill="${WARN}" text-anchor="${anchor}" font-weight="700">峰 ${Math.round(peak)}${unit}</text>`,
+          )
+        }
+        s.push(`</svg>`)
+        return s.join('')
+      }
+
+      /* ================= detail sheets (accordion) ================= */
+      function renderDetails() {
+        const wrap = document.getElementById('details')
+        wrap.innerHTML = NODES.map((n) => {
+          const off = n.offline
+          const st = off
+            ? stamp('已离线')
+            : stamp(n.status === 'warn' ? '负载偏高' : '正常', n.status === 'warn' ? '' : 'ok')
+          const head = `<div class="dhead" tabindex="0" role="button" aria-expanded="false">
+      <span class="bub">${n.letter}</span>
+      <h2>明细 ${n.letter} · ${n.host}</h2>
+      <span class="meta">${n.name} · ${n.region} · 比例 1:1 · 图号 KOM-26-00${n.sheet}</span>
+      ${st}
+      <span class="tw">+</span>
+    </div>`
+          let body
+          if (off) {
+            body = `<div class="voidbox">
+        <span class="stamp big">作废</span>
+        <span>无数据 — 最后在线 ${n.lastSeen} · 详图作废,待复测重绘</span>
+      </div>`
+          } else {
+            const f = (v) => (v == null ? '—' : v)
+            const ld = n.load == null ? ['—', '—', '—'] : n.load
+            body = `<div class="specs">
+        <table class="nplate"><tbody>
+          <tr><td class="k">系统</td><td>${n.os}</td><td class="k">架构</td><td>${n.arch}</td></tr>
+          <tr><td class="k">内核</td><td>${n.kernel}</td><td class="k">虚拟化</td><td>${n.virt}</td></tr>
+          <tr><td class="k">连续运行</td><td>${n.uptime} 天</td><td class="k">磁盘空间</td><td>${n.disk}% · ${n.diskText}</td></tr>
+        </tbody></table>
+        <div class="params">
+          <span>负载 1m <b>${f(ld[0])}</b> · 5m <b>${f(ld[1])}</b> · 15m <b>${f(ld[2])}</b></span>
+          <span>进程数 <b>${f(n.proc)}</b></span>
+          <span>TCP 链接 <b>${f(n.tcp)}</b></span>
+          <span>UDP 链接 <b>${f(n.udp)}</b></span>
+        </div>
+      </div>
+      <div class="dims">
+        ${dimLine('CPU 占用', n.cpu, '%', 100, 85)}
+        ${dimLine('内存', n.mem, '%', 100, 85)}
+        ${dimLine('硬盘', n.disk, '%', 100, 85)}
+        ${dimLine('延迟', n.ping, 'ms', 300, 150)}
+      </div>
+      <div class="chartwrap"><div class="ctitle">测量记录 · CPU 24h</div>${chart(n, 'cpuHist', '%', true, 85)}</div>
+      <div class="chartwrap"><div class="ctitle">测量记录 · 延迟 24h</div>${chart(n, 'pingHist', 'ms', false)}</div>`
+          }
+          const foot = `<div class="dfoot"><div>图号 KOM-26-00${n.sheet}</div><div>第 ${n.sheet} 张 / 共 ${TOTAL()} 张</div><div>KOMARI 绘制</div></div>`
+          const open = n.status === 'warn' ? ' open' : ''
+          return `<div class="detail${open}" id="det-${n.host}">${head}<div class="dbody">${body}${foot}</div></div>`
+        }).join('')
+      }
+
+      /* ================= revision table + title block ================= */
+      function renderFooter() {
+        const d = new Date(),
+          p = (x) => String(x).padStart(2, '0')
+        const today = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+        document.getElementById('hdr-date').textContent = today
+        document.getElementById('tb-date').textContent = today
+        const hasWarn = NODES.some((n) => n.status === 'warn')
+        document.getElementById('tb-sheet').textContent = '1 OF ' + TOTAL()
+        const rev =
+          MODE === 'stress'
+            ? [
+                ['C', today, `压测数据集 · ${NODES.length} UNITS · 6 ZONES · 3 GROUPS`],
+                ['B', today, 'eu-01 / hk-04 负载偏高 · 增补修订云线'],
+                ['A', today, '首次发行 · 压测模式'],
+              ]
+            : [
+                ['C', today, 'us-la-03 负载偏高 · 增补修订云线'],
+                ['B', today, 'sg-node-05 信号中断 · 盖 VOID 章'],
+                ['A', today, '首次发行 · 6 UNITS · TRUNK 1 条'],
+              ]
+        document.getElementById('revbody').innerHTML = rev
+          .map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`)
+          .join('')
+        document.getElementById('tb-stamp').innerHTML = hasWarn ? stamp('有告警 · 待复测') : stamp('审核通过', 'ok')
+      }
+
+      /* ================= events ================= */
+      function goDetail(host) {
+        const el = document.getElementById('det-' + host)
+        if (!el) return
+        el.classList.add('open')
+        el.querySelector('.dhead').setAttribute('aria-expanded', 'true')
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      function goZone(id) {
+        const el = document.getElementById('zone-' + id)
+        if (!el) return
+        el.classList.add('open')
+        el.querySelector('.dhead').setAttribute('aria-expanded', 'true')
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      function toggleDetail(head) {
+        const det = head.closest('.detail')
+        const open = det.classList.toggle('open')
+        head.setAttribute('aria-expanded', open ? 'true' : 'false')
+      }
+      function setFleet(m) {
+        MODE = m
+        localStorage.setItem('bp-fleet', m)
+        NODES = m === 'stress' ? buildStress() : buildStd()
+        document
+          .querySelectorAll('#fleetBtns button')
+          .forEach((b) => b.setAttribute('aria-pressed', b.dataset.fleet === m ? 'true' : 'false'))
+        document.getElementById('zoneSect').style.display = m === 'stress' ? 'flex' : 'none'
+        renderAll()
+      }
+      document.getElementById('sheet').addEventListener('click', (e) => {
+        const head = e.target.closest('.dhead')
+        if (head) {
+          toggleDetail(head)
+          return
+        }
+        const z = e.target.closest('[data-zone]')
+        if (z) {
+          goZone(z.dataset.zone)
+          return
+        }
+        const t = e.target.closest('[data-host]')
+        if (t) goDetail(t.dataset.host)
+        const m = e.target.closest('button[data-mode]')
+        if (m) {
+          document.documentElement.dataset.mode = m.dataset.mode
+          localStorage.setItem('bp-mode', m.dataset.mode)
+          document
+            .querySelectorAll('button[data-mode]')
+            .forEach((b) => b.setAttribute('aria-pressed', b === m ? 'true' : 'false'))
+        }
+        const f = e.target.closest('button[data-fleet]')
+        if (f) setFleet(f.dataset.fleet)
+      })
+      document.getElementById('sheet').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          const head = e.target.closest('.dhead')
+          if (head) {
+            e.preventDefault()
+            toggleDetail(head)
+            return
+          }
+          const z = e.target.closest('[data-zone]')
+          if (z) {
+            e.preventDefault()
+            goZone(z.dataset.zone)
+            return
+          }
+          const t = e.target.closest('[data-host]')
+          if (t) {
+            e.preventDefault()
+            goDetail(t.dataset.host)
+          }
+        }
+      })
+      const urlMode = new URLSearchParams(location.search).get('mode')
+      const savedMode = urlMode || localStorage.getItem('bp-mode')
+      if (savedMode === 'blue' || savedMode === 'white') {
+        document.documentElement.dataset.mode = savedMode
+        document
+          .querySelectorAll('button[data-mode]')
+          .forEach((b) => b.setAttribute('aria-pressed', b.dataset.mode === savedMode ? 'true' : 'false'))
+      }
+
+      /* ================= init ================= */
+      function renderAll() {
+        renderLegend()
+        if (MODE === 'stress') renderGAStress()
+        else renderGA()
+        renderZoneSheets()
+        renderSched()
+        renderDetails()
+        renderFooter()
+      }
+      if (MODE === 'stress') {
+        document.getElementById('zoneSect').style.display = 'flex'
+        document
+          .querySelectorAll('#fleetBtns button')
+          .forEach((b) => b.setAttribute('aria-pressed', b.dataset.fleet === MODE ? 'true' : 'false'))
+      }
+      renderAll()
+    </script>
+  </body>
+</html>

@@ -84,7 +84,17 @@ function handleButtonClick(action: string) {
   }
 }
 
-const sitename = computed(() => appStore.publicSettings?.sitename || 'Komari Monitor')
+/** 站点名：读 localStorage 缓存，避免刷新时先显示默认文案再闪烁为自定义站名 */
+const sitename = computed(() => {
+  let cached = ''
+  try {
+    cached = localStorage.getItem('theme:sitename:v1') || ''
+  }
+  catch {
+    cached = ''
+  }
+  return cached || appStore.publicSettings?.sitename || 'Komari Monitor'
+})
 </script>
 
 <template>
@@ -92,8 +102,9 @@ const sitename = computed(() => appStore.publicSettings?.sitename || 'Komari Mon
   <VisitorInfo v-if="!appStore.loading && appStore.visitorInfoEnabled" />
 
   <div
-    class="transition-all duration-200 top-0 sticky z-10 border-b border-transparent"
-    :class="isScrolled ? '!border-slate-500/10 backdrop-blur-lg' : 'bg-transparent'"
+    class="transition-all duration-200 top-0 sticky z-10 w-full bg-card border-b border-border"
+    :class="isScrolled ? 'shadow-sm' : ''"
+    style="padding-top: env(safe-area-inset-top)"
   >
     <div class="px-4 flex-between h-14 max-w-[1280px] mx-auto">
       <div class="flex items-center gap-3 cursor-pointer" @click="router.push('/')">
