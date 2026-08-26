@@ -33,8 +33,8 @@ interface QuickControlOption {
   icon: string
 }
 
-type HomeToolKey = 'nodes' | 'nodeCompare' | 'topology' | 'providerValue' | 'healthSummary' | 'snapshotExport' | 'auditLog'
-type PrivateHomeToolKey = Exclude<HomeToolKey, 'nodes' | 'nodeCompare'>
+type HomeToolKey = 'nodes' | 'nodeCompare' | 'topology' | 'providerValue' | 'healthSummary' | 'snapshotExport' | 'auditLog' | 'blueprint'
+type PrivateHomeToolKey = Exclude<HomeToolKey, 'nodes' | 'nodeCompare' | 'blueprint'>
 
 interface HomeToolOption {
   key: Exclude<HomeToolKey, 'nodes'>
@@ -55,6 +55,7 @@ const PingMonitorDialog = defineAsyncComponent(() => import('@/components/PingMo
 const NodeTopologyPanel = defineAsyncComponent(() => import('@/components/NodeTopologyPanel.vue'))
 const ProviderValuePanel = defineAsyncComponent(() => import('@/components/ProviderValuePanel.vue'))
 const SnapshotExportPanel = defineAsyncComponent(() => import('@/components/SnapshotExportPanel.vue'))
+const BlueprintPanel = defineAsyncComponent(() => import('@/components/blueprint/BlueprintPanel.vue'))
 
 const nodeItemStaggerMs = UI_CONFIG.motion.staggerMs
 const nodeItemStaggerLimit = UI_CONFIG.motion.staggerLimit
@@ -114,6 +115,7 @@ const homeTools = computed<HomeToolOption[]>(() => {
 
   const tools: HomeToolOption[] = [
     { key: 'nodeCompare', label: '对比', icon: 'tabler:columns-3', description: '最多四台节点实时横向对比' },
+    { key: 'blueprint', label: '蓝图', icon: 'tabler:map-2', description: '工程蓝图总图 · 分区 · 明细图纸' },
   ]
   if (!appStore.privateFeaturesAllowed)
     return tools
@@ -344,7 +346,7 @@ async function toggleHomeTool(key: Exclude<HomeToolKey, 'nodes'>) {
     return
   }
 
-  const permission = key === 'nodeCompare' ? null : homeToolPermissionMap[key]
+  const permission = (key === 'nodeCompare' || key === 'blueprint') ? null : homeToolPermissionMap[key]
   if (permission) {
     const granted = await appStore.requireLoginPermission(permission, { force: true })
     if (!granted) {
@@ -542,6 +544,7 @@ const nodeCardGridClass = computed(() => {
             <HealthSummaryPanel v-else-if="activeHomeTool === 'healthSummary'" :nodes="groupNodeList" />
             <SnapshotExportPanel v-else-if="activeHomeTool === 'snapshotExport'" :nodes="groupNodeList" />
             <AuditLogPanel v-else-if="activeHomeTool === 'auditLog'" />
+            <BlueprintPanel v-else-if="activeHomeTool === 'blueprint'" :nodes="groupNodeList" />
             <TransitionGroup
               v-else-if="nodeList.length !== 0 && appStore.nodeViewMode === 'card'"
               :appear="enableNodeCardTransition"
