@@ -36,6 +36,9 @@ let lastPointerY = 0
 const clampLat = (v: number) => Math.min(65, Math.max(-65, v))
 const wrapLon = (v: number) => ((v + 540) % 360) - 180
 
+/** 视场状态栏（拖拽实时刷新） */
+const viewportStatus = computed(() => formatViewportStatus(globeLon.value, globeLat.value))
+
 const { regionClusters } = useNodeGeoClusters({ nodes: () => props.nodes })
 
 interface LabelItem {
@@ -130,7 +133,6 @@ const radarAngle = ref(0)
 const radarCanvasRef = ref<HTMLCanvasElement>()
 const radarRgb = computed(() => (appStore.isDark ? [0, 195, 255] : [41, 98, 255]))
 const preferReducedMotion = ref(false)
-const viewportStatus = computed(() => formatViewportStatus(globeLon.value, globeLat.value))
 
 function drawRadar() {
   const canvas = radarCanvasRef.value
