@@ -7,7 +7,7 @@ import { esc } from '@/components/blueprint/svg'
 import { useNodeGeoClusters } from '@/composables/useNodeGeoClusters'
 import { WORLD_OUTLINES } from '@/data/world-outlines'
 import { useAppStore } from '@/stores/app'
-import { coastPath, formatViewportStatus, layoutLabels, meridianPaths, parallelPaths, projectNode } from '@/utils/lineGlobe'
+import { coastPath, formatViewportStatus, layoutLabels, meridianPaths, parallelPaths, projectNode, scanArcPoints } from '@/utils/lineGlobe'
 
 const props = defineProps<{ nodes?: NodeData[] }>()
 const appStore = useAppStore()
@@ -19,9 +19,9 @@ const shouldRender = computed(() => documentVisibility.value === 'visible' && el
 const shouldAutoRotate = computed(() => !appStore.stopEarth)
 
 const VIEW_W = 480
-const VIEW_H = 260
+const VIEW_H = 272
 const CX = VIEW_W / 2
-const CY = VIEW_H / 2
+const CY = 130
 const R = 130
 
 /** 初始视角：面向亚洲（东经 100，北纬 20） */
@@ -97,6 +97,10 @@ const svg = computed(() => {
     }
   }
 
+  // 状态栏（组件内底部居中 + 基线分割线）
+  s.push(`<line x1="${CX - 95}" y1="${VIEW_H - 14}" x2="${CX + 95}" y2="${VIEW_H - 14}" stroke="${color.grid}" stroke-width="0.8"/>`)
+  s.push(`<text x="${CX}" y="${VIEW_H - 3}" font-size="9" fill="${color.text}" text-anchor="middle" letter-spacing="2">${esc(viewportStatus.value)}</text>`)
+
   return s.join('')
 })
 
@@ -151,27 +155,25 @@ function drawRadar() {
   const r = R * scale
   const [red, green, blue] = radarRgb.value
   const theta = radarAngle.value
-  const sweep = 1.0
-  const segments = 8
-  for (let i = 0; i < segments; i++) {
-    const a0 = theta - (sweep * (i + 1)) / segments
-    const a1 = theta - (sweep * i) / segments
-    const alpha = 0.28 * (1 - i / segments)
-    if (alpha <= 0.004)
-      continue
+  // 球面扫描弧族：经线弧经正交投影呈弯曲弧线（背面自动剔除）
+  const arcs = scanArcPoints(globeLon.value, globeLat.value, cx, cy, r, theta)
+  for (const arc of arcs) {
     ctx.beginPath()
-    ctx.moveTo(cx, cy)
-    ctx.arc(cx, cy, r, a0, a1)
-    ctx.closePath()
-    ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${alpha.toFixed(3)})`
-    ctx.fill()
+    let pen = false
+    for (const pt of arc.pts) {
+      if (!pt) {
+        pen = false
+        continue
+      }
+      if (pen)
+        ctx.lineTo(pt.x, pt.y)
+      else ctx.moveTo(pt.x, pt.y)
+      pen = true
+    }
+    ctx.strokeStyle = `rgba(${red}, ${green}, ${blue}, ${arc.alpha.toFixed(3)})`
+    ctx.lineWidth = arc.width
+    ctx.stroke()
   }
-  ctx.beginPath()
-  ctx.moveTo(cx, cy)
-  ctx.lineTo(cx + Math.cos(theta) * r, cy + Math.sin(theta) * r)
-  ctx.strokeStyle = `rgba(${red}, ${green}, ${blue}, 0.72)`
-  ctx.lineWidth = 2
-  ctx.stroke()
 }
 
 const { pause: pauseRadar, resume: resumeRadar } = useRafFn(() => {
@@ -225,9 +227,6 @@ onBeforeUnmount(() => {
       class="radar-canvas pointer-events-none absolute inset-0 h-full w-full"
       aria-hidden="true"
     />
-    <div class="view-status pointer-events-none absolute inset-x-0 bottom-0 py-1 text-center text-[10px] tracking-[0.22em] text-muted-foreground/80">
-      {{ viewportStatus }}
-    </div>
   </div>
 </template>
 

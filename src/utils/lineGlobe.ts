@@ -199,3 +199,50 @@ export function formatViewportStatus(lon: number, lat: number): string {
   const latPart = `${Math.abs(lat).toFixed(0)}°${lat >= 0 ? 'N' : 'S'}`
   return `ORTHOGRAPHIC · ${lonPart} ${latPart} · MEDIUM`
 }
+
+/** 雷达扫描折线（可见点序列，null 表示背面断点） */
+export interface ScanPolyline {
+  pts: Array<{ x: number, y: number } | null>
+  alpha: number
+  width: number
+}
+
+/**
+ * 球面扫描弧族：以 theta（弧度）为扫描中心的多条经线弧，
+ * 每条弧经正交投影后为贴合曲率的弯曲弧线（背面自动剔除，null 断开）。
+ * 用于雷达扫描线 3D 呈现（方案 B：球面弧线拟合，零依赖）。
+ */
+export function scanArcPoints(
+  centerLon: number,
+  centerLat: number,
+  cx: number,
+  cy: number,
+  radius: number,
+  theta: number,
+  segments = 8,
+  sweep = 1.0,
+): ScanPolyline[] {
+  const out: ScanPolyline[] = []
+  for (let i = 0; i < segments; i++) {
+    const arcLon = centerLon + theta * 180 / Math.PI - (sweep * i * 180 / Math.PI) / segments
+    const pts: Array<{ x: number, y: number } | null> = []
+    let pen = false
+    for (let lat = -84; lat <= 84; lat += 4) {
+      const p = ortho(arcLon, lat, centerLon, centerLat, cx, cy, radius)
+      if (!p.visible) {
+        pen = false
+        continue
+      }
+      if (!pen)
+        pts.push(null)
+      pts.push({ x: p.x, y: p.y })
+      pen = true
+    }
+    out.push({
+      pts,
+      alpha: i === 0 ? 0.72 : 0.4 * (1 - i / segments),
+      width: i === 0 ? 2 : 1,
+    })
+  }
+  return out
+}
