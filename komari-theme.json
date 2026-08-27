@@ -2,7 +2,7 @@
   "name": "blueprint",
   "short": "blueprint",
   "description": "A Blueprint theme for Komari",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "author": "jacob-bytes",
   "url": "https://github.com/jacob-bytes/komari-theme-blueprint",
   "preview": "preview.png",
@@ -25,7 +25,7 @@
       { "key": "colorVisionMode", "name": "色觉辅助配色", "type": "select", "default": "标准", "options": "标准,色觉友好", "help": "色觉友好使用蓝、蓝绿、橙、朱红、紫红，并为图表和状态增加线型、纹理、文字或图标区分。" },
 
       { "name": "03 · 高级工具与隐私", "type": "title" },
-      { "key": "homeToolsEnabled", "name": "登录后显示高级工具", "type": "switch", "default": true, "help": "显示拓扑、性价比、健康、导出和审计工具。" },
+      { "key": "homeToolsEnabled", "name": "登录后显示高级工具", "type": "switch", "default": true, "help": "显示节点、蓝图、对比、性价比、导出和审计日志工具。" },
       { "key": "hideAdminEntryWhenLoggedOut", "name": "隐藏后台入口", "type": "switch", "default": false, "help": "未登录时隐藏顶部后台管理入口" },
       { "key": "hidePriceWhenLoggedOut", "name": "未登录隐藏价格", "type": "switch", "default": false, "help": "未登录时隐藏节点卡片/列表中的价格、剩余价值和费用类卡片；在线天数仍会显示" },
       { "key": "providerAliases", "name": "厂商自定义别名", "type": "string", "default": "", "help": "格式：Provider:alias1,alias2;Provider2:alias。" },
