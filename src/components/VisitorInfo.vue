@@ -24,7 +24,21 @@ const mobileViewportQuery = '(max-width: 767px)'
 const appStore = useAppStore()
 
 const show = ref(false)
-const dismissed = ref(false)
+/** 左下角详情卡：默认收起，点击底部 Banner 的详情按钮展开，4 秒后自动折叠 */
+const detailOpen = ref(false)
+let detailHideTimer: number | undefined
+
+function toggleDetail(force?: boolean) {
+  detailOpen.value = force ?? !detailOpen.value
+  if (detailHideTimer !== undefined)
+    window.clearTimeout(detailHideTimer)
+  if (detailOpen.value) {
+    detailHideTimer = window.setTimeout(() => {
+      detailOpen.value = false
+      detailHideTimer = undefined
+    }, 4000)
+  }
+}
 const visitorLoading = ref(true)
 const visitorFailed = ref(false)
 const mobileScrolling = ref(false)
@@ -120,11 +134,9 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   if (scrollIdleTimer !== undefined)
     window.clearTimeout(scrollIdleTimer)
+  if (detailHideTimer !== undefined)
+    window.clearTimeout(detailHideTimer)
 })
-
-function dismiss() {
-  dismissed.value = true
-}
 
 async function fetchVisitorData(): Promise<VisitorData | null> {
   for (const provider of visitorProviders) {
@@ -297,7 +309,7 @@ const siteName = computed(() => appStore.privateFeaturesAllowed ? '尊敬的管�
   <!-- 底部居中 IP 条（桌面+手机都显示） -->
   <Transition name="slide-up">
     <div
-      v-if="show && !dismissed && !mobileScrolling"
+      v-if="show && !mobileScrolling"
       class="fixed bottom-3 left-1/2 z-50 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2
              items-center gap-1.5 rounded-full px-3 py-1.5 md:bottom-4 md:gap-2 md:px-4
              bg-white/55 dark:bg-black/50
@@ -312,14 +324,24 @@ const siteName = computed(() => appStore.privateFeaturesAllowed ? '尊敬的管�
       <span class="max-w-20 shrink-0 truncate text-muted-foreground sm:max-w-none">{{ displayCountry }}</span>
       <span class="hidden sm:inline text-muted-foreground/40 shrink-0">|</span>
       <span class="hidden sm:inline text-muted-foreground truncate max-w-[140px] md:max-w-[220px]">{{ displayOrg }}</span>
+      <button
+        type="button"
+        class="ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full
+               text-muted-foreground transition-colors hover:bg-black/6 hover:text-foreground dark:hover:bg-white/10"
+        :aria-label="detailOpen ? '收起访客详情' : '展开访客详情'"
+        :aria-expanded="detailOpen"
+        @click="toggleDetail()"
+      >
+        <Icon :icon="detailOpen ? 'icon-park-outline:down' : 'icon-park-outline:up'" :width="12" :height="12" />
+      </button>
     </div>
   </Transition>
 
   <!-- 左下角详情卡片 — 模仿图二样式 -->
   <Transition name="slide-left">
     <div
-      v-if="show && !dismissed"
-      class="fixed bottom-16 left-3 z-50 hidden w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl lg:block
+      v-if="show && detailOpen"
+      class="fixed bottom-16 left-3 z-50 w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl
              bg-white/70 dark:bg-neutral-900/70
              backdrop-blur-xl
              border border-white/40 dark:border-white/10
@@ -341,8 +363,8 @@ const siteName = computed(() => appStore.privateFeaturesAllowed ? '尊敬的管�
           type="button"
           class="size-6 rounded-full flex items-center justify-center
                  hover:bg-black/8 dark:hover:bg-white/10 transition-colors"
-          aria-label="关闭访客信息"
-          @click="dismiss"
+          aria-label="收起访客详情"
+          @click="toggleDetail(false)"
         >
           <Icon icon="icon-park-outline:close" :width="13" :height="13" class="text-muted-foreground" />
         </button>
