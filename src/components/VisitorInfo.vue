@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useAppStore } from '@/stores/app'
 
 interface VisitorData {
   ip: string
@@ -21,7 +20,6 @@ type JsonRecord = Record<string, unknown>
 const visitorFetchTimeout = 8000
 const mobileScrollIdleDelay = 700
 const mobileViewportQuery = '(max-width: 767px)'
-const appStore = useAppStore()
 
 const show = ref(false)
 /** 左下角详情卡：默认收起，点击底部 Banner 的详情按钮展开，4 秒后自动折叠 */
@@ -301,106 +299,86 @@ function formatDate(): string {
     day: 'numeric',
   })
 }
-
-const siteName = computed(() => appStore.privateFeaturesAllowed ? '尊敬的管理员' : '访客')
 </script>
 
 <template>
-  <!-- 底部居中 IP 条（桌面+手机都显示） -->
+  <!-- 底部居中 IP 信息条：胶囊 ⇄ 就地双列展开（同一容器，无独立悬浮层） -->
   <Transition name="slide-up">
     <div
       v-if="show && !mobileScrolling"
-      class="fixed bottom-3 left-1/2 z-50 flex w-max max-w-[calc(100vw-1.5rem)] -translate-x-1/2
-             items-center gap-1.5 rounded-full px-3 py-1.5 md:bottom-4 md:gap-2 md:px-4
-             bg-white/55 dark:bg-black/50
-             backdrop-blur-md
+      class="fixed bottom-3 left-1/2 z-50 -translate-x-1/2 w-max max-w-[calc(100vw-1.5rem)] md:bottom-4
+             bg-white/55 dark:bg-black/50 backdrop-blur-md
              border border-white/40 dark:border-white/10
-             shadow-lg text-[12px] md:text-[13px] select-none whitespace-nowrap"
+             shadow-lg text-[12px] md:text-[13px] select-none transition-all duration-300"
+      :class="detailOpen ? 'rounded-2xl px-4 py-3' : 'rounded-full px-3 py-1.5 md:px-4'"
     >
-      <Icon icon="icon-park-outline:earth" :width="14" :height="14" class="text-blue-500 shrink-0" />
-      <span class="hidden text-muted-foreground sm:inline">Your IP:</span>
-      <span class="min-w-0 truncate font-semibold text-foreground">{{ displayIp }}</span>
-      <span class="text-muted-foreground/40 shrink-0">|</span>
-      <span class="max-w-20 shrink-0 truncate text-muted-foreground sm:max-w-none">{{ displayCountry }}</span>
-      <span class="hidden sm:inline text-muted-foreground/40 shrink-0">|</span>
-      <span class="hidden sm:inline text-muted-foreground truncate max-w-[140px] md:max-w-[220px]">{{ displayOrg }}</span>
-      <button
-        type="button"
-        class="ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full
-               text-muted-foreground transition-colors hover:bg-black/6 hover:text-foreground dark:hover:bg-white/10"
-        :aria-label="detailOpen ? '收起访客详情' : '展开访客详情'"
-        :aria-expanded="detailOpen"
-        @click="toggleDetail()"
-      >
-        <Icon :icon="detailOpen ? 'icon-park-outline:down' : 'icon-park-outline:up'" :width="12" :height="12" />
-      </button>
-    </div>
-  </Transition>
-
-  <!-- 左下角详情卡片 — 模仿图二样式 -->
-  <Transition name="slide-left">
-    <div
-      v-if="show && detailOpen"
-      class="fixed bottom-16 left-3 z-50 w-56 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl
-             bg-white/70 dark:bg-neutral-900/70
-             backdrop-blur-xl
-             border border-white/40 dark:border-white/10
-             shadow-2xl"
-    >
-      <!-- 顶部：头像 + 名字 + 关闭 -->
-      <div class="flex items-center justify-between px-4 pt-4 pb-1">
-        <div class="flex items-center gap-2.5">
-          <!-- 渐变头像圆 -->
-          <div class="size-9 rounded-full bg-gradient-to-br from-violet-400 via-blue-400 to-cyan-400 flex items-center justify-center shrink-0 shadow-md">
-            <Icon icon="icon-park-outline:user" :width="18" :height="18" class="text-white" />
-          </div>
-          <div class="flex flex-col leading-tight">
-            <span class="text-[14px] font-bold text-violet-500 dark:text-violet-400">{{ siteName }}</span>
-            <span class="text-[11px] text-muted-foreground truncate max-w-[12rem] sm:max-w-32">{{ compactLocation }}</span>
-          </div>
-        </div>
+      <!-- 折叠态：胶囊单行 -->
+      <div v-if="!detailOpen" class="flex items-center gap-1.5 whitespace-nowrap">
+        <Icon icon="icon-park-outline:earth" :width="14" :height="14" class="text-blue-500 shrink-0" />
+        <span class="hidden text-muted-foreground sm:inline">Your IP:</span>
+        <span class="min-w-0 truncate font-semibold text-foreground">{{ displayIp }}</span>
+        <span class="text-muted-foreground/40 shrink-0">|</span>
+        <span class="max-w-20 shrink-0 truncate text-muted-foreground sm:max-w-none">{{ displayCountry }}</span>
+        <span class="hidden sm:inline text-muted-foreground/40 shrink-0">|</span>
+        <span class="hidden sm:inline text-muted-foreground truncate max-w-[140px] md:max-w-[220px]">{{ displayOrg }}</span>
         <button
           type="button"
-          class="size-6 rounded-full flex items-center justify-center
-                 hover:bg-black/8 dark:hover:bg-white/10 transition-colors"
-          aria-label="收起访客详情"
-          @click="toggleDetail(false)"
+          class="ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full
+                 text-muted-foreground transition-colors hover:bg-black/6 hover:text-foreground dark:hover:bg-white/10"
+          aria-label="展开访客详情"
+          aria-expanded="false"
+          @click="toggleDetail()"
         >
-          <Icon icon="icon-park-outline:close" :width="13" :height="13" class="text-muted-foreground" />
+          <Icon icon="icon-park-outline:up" :width="12" :height="12" />
         </button>
       </div>
 
-      <!-- Welcome 文字 -->
-      <div class="px-4 pb-2">
-        <p class="text-[12px] text-foreground/70">
-          {{ visitorStatusText }}
-        </p>
-      </div>
-
-      <!-- 分割线 -->
-      <div class="mx-4 border-t border-black/6 dark:border-white/8 mb-2" />
-
-      <!-- 信息行 -->
-      <div class="px-4 pb-4 flex flex-col gap-2">
-        <div class="flex items-center gap-2.5 text-[12px] text-foreground/75">
-          <Icon :icon="getOsIcon()" :width="14" :height="14" class="text-muted-foreground shrink-0" />
-          <span>{{ getOsName() }}</span>
+      <!-- 展开态：同容器内双列平铺全部信息 -->
+      <div v-else class="flex flex-col gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5">
+          <div class="flex min-w-0 items-center gap-2">
+            <Icon icon="icon-park-outline:global" :width="13" :height="13" class="shrink-0 text-blue-500" />
+            <span class="shrink-0 text-muted-foreground">地区</span>
+            <span class="truncate font-medium">{{ compactLocation }}</span>
+          </div>
+          <div class="flex min-w-0 items-center gap-2">
+            <Icon :icon="getOsIcon()" :width="13" :height="13" class="shrink-0 text-muted-foreground" />
+            <span class="shrink-0 text-muted-foreground">设备</span>
+            <span class="truncate font-medium">{{ getOsName() }}</span>
+          </div>
+          <div class="flex min-w-0 items-center gap-2">
+            <Icon icon="icon-park-outline:local" :width="13" :height="13" class="shrink-0 text-blue-500" />
+            <span class="shrink-0 text-muted-foreground">IP</span>
+            <span class="truncate font-mono font-medium">{{ displayIp }}</span>
+          </div>
+          <div class="flex min-w-0 items-center gap-2">
+            <Icon icon="icon-park-outline:browser-chrome" :width="13" :height="13" class="shrink-0 text-muted-foreground" />
+            <span class="shrink-0 text-muted-foreground">浏览器</span>
+            <span class="truncate font-medium">{{ getBrowserName() }}</span>
+          </div>
+          <div class="flex min-w-0 items-center gap-2">
+            <Icon icon="icon-park-outline:protect" :width="13" :height="13" class="shrink-0 text-muted-foreground" />
+            <span class="shrink-0 text-muted-foreground">ISP</span>
+            <span class="truncate font-medium">{{ displayOrg }}</span>
+          </div>
+          <div class="flex min-w-0 items-center gap-2">
+            <Icon icon="icon-park-outline:time" :width="13" :height="13" class="shrink-0 text-muted-foreground" />
+            <span class="shrink-0 text-muted-foreground">时间</span>
+            <span class="truncate font-medium">{{ formatDate() }}</span>
+          </div>
         </div>
-        <div class="flex items-center gap-2.5 text-[12px] text-foreground/75">
-          <Icon icon="icon-park-outline:browser-chrome" :width="14" :height="14" class="text-muted-foreground shrink-0" />
-          <span>{{ getBrowserName() }}</span>
-        </div>
-        <div class="flex items-center gap-2.5 text-[12px] text-foreground/75">
-          <Icon icon="icon-park-outline:local" :width="14" :height="14" class="text-blue-500 shrink-0" />
-          <span class="font-mono truncate">{{ displayIp }}</span>
-        </div>
-        <div class="flex items-center gap-2.5 text-[12px] text-foreground/75">
-          <Icon icon="icon-park-outline:protect" :width="14" :height="14" class="text-muted-foreground shrink-0" />
-          <span class="truncate">{{ displayOrg }}</span>
-        </div>
-        <div class="flex items-center gap-2.5 text-[12px] text-foreground/75">
-          <Icon icon="icon-park-outline:time" :width="14" :height="14" class="text-muted-foreground shrink-0" />
-          <span>{{ formatDate() }}</span>
+        <div class="flex items-center justify-between gap-3 border-t border-black/6 pt-2 dark:border-white/10">
+          <span class="truncate text-[11px] text-muted-foreground">{{ visitorStatusText }}</span>
+          <button
+            type="button"
+            class="inline-flex size-5 shrink-0 items-center justify-center rounded-full
+                   text-muted-foreground transition-colors hover:bg-black/6 hover:text-foreground dark:hover:bg-white/10"
+            aria-label="收起访客详情"
+            aria-expanded="true"
+            @click="toggleDetail(false)"
+          >
+            <Icon icon="icon-park-outline:down" :width="12" :height="12" />
+          </button>
         </div>
       </div>
     </div>
@@ -416,15 +394,5 @@ const siteName = computed(() => appStore.privateFeaturesAllowed ? '尊敬的管�
 .slide-up-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(20px);
-}
-
-.slide-left-enter-active,
-.slide-left-leave-active {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.slide-left-enter-from,
-.slide-left-leave-to {
-  opacity: 0;
-  transform: translateX(-20px);
 }
 </style>
