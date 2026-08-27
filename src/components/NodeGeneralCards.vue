@@ -712,8 +712,8 @@ const wrapperClass = computed(() => {
     return 'p-3 sm:p-4 grid grid-cols-12 gap-2 sm:gap-3 h-auto min-h-[40rem] sm:min-h-[30rem] md:min-h-[36rem] lg:min-h-[40rem]'
 
   return hasExtraCards.value
-    ? 'p-4 grid grid-cols-12 gap-2 h-auto md:min-h-76'
-    : 'p-4 grid grid-cols-12 grid-rows-1 gap-2 h-auto md:h-76'
+    ? 'p-4 grid grid-cols-12 gap-2 h-auto md:min-h-66'
+    : 'p-4 grid grid-cols-12 grid-rows-1 gap-2 h-auto md:h-66'
 })
 const earthClass = computed(() => {
   if (isTiledEarth.value)
@@ -730,7 +730,7 @@ const cardGridClass = computed(() => {
 
   return hasExtraCards.value
     ? 'h-auto -mt-42 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 auto-rows-[5rem] md:auto-rows-[7rem] gap-2'
-    : 'h-42 -mt-42 md:mt-0 col-span-12 row-start-3 z-9 md:h-50 md:self-start md:col-span-6 md:row-start-1 grid grid-cols-12 grid-rows-2 gap-2'
+    : 'h-42 -mt-42 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 grid-rows-2 gap-2'
 })
 const cardClass = 'group relative z-10 h-full bg-card border-border hover:bg-secondary transition-all'
 const cardPositionClasses = [
