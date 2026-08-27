@@ -306,14 +306,20 @@ function formatDate(): string {
   <Transition name="slide-up">
     <div
       v-if="show && !mobileScrolling"
-      class="fixed bottom-3 left-1/2 z-50 -translate-x-1/2 w-max max-w-[calc(100vw-1.5rem)] md:bottom-4
+      class="fixed bottom-3 left-1/2 z-50 -translate-x-1/2 w-[440px] max-w-[calc(100vw-1.5rem)] md:bottom-4
              bg-white/55 dark:bg-black/50 backdrop-blur-md
              border border-white/40 dark:border-white/10
              shadow-lg text-[12px] md:text-[13px] select-none transition-all duration-300"
       :class="detailOpen ? 'rounded-2xl px-4 py-3' : 'rounded-full px-3 py-1.5 md:px-4'"
+      role="button"
+      :tabindex="detailOpen ? -1 : 0"
+      :aria-label="detailOpen ? '收起访客详情' : '展开访客详情'"
+      :aria-expanded="detailOpen"
+      @click="toggleDetail()"
+      @keydown.enter="toggleDetail()"
     >
-      <!-- 折叠态：胶囊单行 -->
-      <div v-if="!detailOpen" class="flex items-center gap-1.5 whitespace-nowrap">
+      <!-- 折叠态：胶囊单行（内容居中；宽度与展开态恒定一致） -->
+      <div v-if="!detailOpen" class="flex items-center justify-center gap-1.5 whitespace-nowrap">
         <Icon icon="icon-park-outline:earth" :width="14" :height="14" class="text-blue-500 shrink-0" />
         <span class="hidden text-muted-foreground sm:inline">Your IP:</span>
         <span class="min-w-0 truncate font-semibold text-foreground">{{ displayIp }}</span>
@@ -321,16 +327,7 @@ function formatDate(): string {
         <span class="max-w-20 shrink-0 truncate text-muted-foreground sm:max-w-none">{{ displayCountry }}</span>
         <span class="hidden sm:inline text-muted-foreground/40 shrink-0">|</span>
         <span class="hidden sm:inline text-muted-foreground truncate max-w-[140px] md:max-w-[220px]">{{ displayOrg }}</span>
-        <button
-          type="button"
-          class="ml-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full
-                 text-muted-foreground transition-colors hover:bg-black/6 hover:text-foreground dark:hover:bg-white/10"
-          aria-label="展开访客详情"
-          aria-expanded="false"
-          @click="toggleDetail()"
-        >
-          <Icon icon="icon-park-outline:up" :width="12" :height="12" />
-        </button>
+        <Icon icon="icon-park-outline:up" :width="12" :height="12" class="shrink-0 text-muted-foreground" />
       </div>
 
       <!-- 展开态：同容器内双列平铺全部信息 -->
@@ -375,7 +372,7 @@ function formatDate(): string {
                    text-muted-foreground transition-colors hover:bg-black/6 hover:text-foreground dark:hover:bg-white/10"
             aria-label="收起访客详情"
             aria-expanded="true"
-            @click="toggleDetail(false)"
+            @click.stop="toggleDetail(false)"
           >
             <Icon icon="icon-park-outline:down" :width="12" :height="12" />
           </button>
