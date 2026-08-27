@@ -28,6 +28,8 @@ const shouldRender = computed(() => documentVisibility.value === 'visible' && el
 const shouldAutoRotate = computed(() => !appStore.stopEarth)
 
 let globe: Globe | null = null
+/** 首帧渲染完成信号：画布初始透明，首帧后淡入（统一首屏呈现屏障） */
+const canvasReady = ref(false)
 const INITIAL_THETA = 0.22
 const MIN_THETA = -0.65
 const MAX_THETA = 0.65
@@ -186,7 +188,7 @@ function getDevicePixelRatio(): number {
   if (typeof window === 'undefined')
     return 1
 
-  return Math.min(window.devicePixelRatio || 1, 2.5)
+  return Math.min(window.devicePixelRatio || 1, 3)
 }
 
 function buildInitialOptions(): COBEOptions {
@@ -256,6 +258,8 @@ function startGlobe() {
   requestAnimationFrame(() => {
     updateGlobeFrame()
     applyLabelStyles()
+    // 首帧绘制完成 → 淡入画布，避免"空白 canvas → 突然出现"的首屏闪烁
+    canvasReady.value = true
   })
   if (documentVisibility.value === 'visible')
     resumeRaf()
@@ -372,6 +376,7 @@ function onPointerUp(e: PointerEvent) {
     <canvas
       ref="canvasRef"
       class="earth-globe-canvas absolute inset-0 w-full h-full select-none touch-none cursor-grab active:cursor-grabbing"
+      :style="{ opacity: canvasReady ? 1 : 0 }"
       @pointerdown="onPointerDown" @pointermove="onPointerMove" @pointerup="onPointerUp" @pointercancel="onPointerUp"
     />
 
@@ -406,8 +411,9 @@ function onPointerUp(e: PointerEvent) {
 <style scoped>
 .earth-globe-canvas {
   contain: layout paint;
-  /* 球体外圈环形发光（亮/暗由 --globe-glow 变量驱动）；移除 blur 保持点阵边缘清晰 */
-  filter: drop-shadow(0 0 22px var(--globe-glow));
+  /* 球体外圈环形发光 + 极轻微模糊柔化弧线锯齿（0.3px，不糊点阵） */
+  filter: blur(0.3px) drop-shadow(0 0 22px var(--globe-glow));
   transform: translateZ(0);
+  transition: opacity 0.45s ease;
 }
 </style>
