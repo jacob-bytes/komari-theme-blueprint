@@ -121,7 +121,10 @@ export function parallelPaths(
   return out
 }
 
-/** 节点坐标（经度/纬度）→ 投影点；背面或超半径外返回 null */
+/**
+ * 节点坐标 → 投影点；背面返回 null。
+ * 注意：coord 为 [lat, lng]（Komari 节点/聚合簇的坐标顺序），内部交换为 (lon, lat)。
+ */
 export function projectNode(
   coord: LonLat,
   centerLon: number,
@@ -130,7 +133,7 @@ export function projectNode(
   cy: number,
   radius: number,
 ): GlobePoint | null {
-  const p = ortho(coord[0], coord[1], centerLon, centerLat, cx, cy, radius)
+  const p = ortho(coord[1], coord[0], centerLon, centerLat, cx, cy, radius)
   return p.visible ? p : null
 }
 
