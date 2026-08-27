@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'komari-theme.json'
+      - komari-theme.json
 
 permissions:
   contents: write
