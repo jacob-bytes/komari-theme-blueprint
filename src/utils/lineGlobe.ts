@@ -219,8 +219,8 @@ export function scanArcPoints(
   cy: number,
   radius: number,
   theta: number,
-  segments = 5,
-  sweep = 1.0,
+  segments = 2,
+  sweep = 0.35,
 ): ScanPolyline[] {
   const out: ScanPolyline[] = []
   for (let i = 0; i < segments; i++) {
@@ -240,8 +240,8 @@ export function scanArcPoints(
     }
     out.push({
       pts,
-      alpha: i === 0 ? 0.72 : 0.5 * (1 - i / segments),
-      width: i === 0 ? 1.6 : 1,
+      alpha: i === 0 ? 0.6 : 0.1,
+      width: i === 0 ? 1.5 : 1,
     })
   }
   return out
