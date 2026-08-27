@@ -25,7 +25,6 @@ import {
   isHighLoadNode,
 } from '@/utils/nodeMetricsHelper'
 import { isNodeMatchSearch } from '@/utils/nodeSearch'
-import { isFreeNode } from '@/utils/tagHelper'
 
 interface QuickControlOption {
   key: HomeQuickControlKey
@@ -95,7 +94,6 @@ const homeToolPermissionMap: Record<PrivateHomeToolKey, PermissionKey> = {
 
 const quickControlDefinitions: Record<HomeQuickControlKey, QuickControlOption> = {
   favorite: { key: 'favorite', label: '收藏', icon: 'tabler:star' },
-  monthlyCost: { key: 'monthlyCost', label: '月成本', icon: 'tabler:calendar-dollar' },
   totalTraffic: { key: 'totalTraffic', label: '总流量', icon: 'tabler:database' },
   upload: { key: 'upload', label: '上行', icon: 'tabler:chevron-up' },
   download: { key: 'download', label: '下行', icon: 'tabler:chevron-down' },
@@ -133,7 +131,7 @@ const groups = computed(() => [
   ...nodesStore.groups.map(g => ({ tab: g, name: g })),
 ])
 
-const quickControlKeys = computed<HomeQuickControlKey[]>(() => appStore.homeQuickControlOrder.filter(key => key !== 'monthlyCost'))
+const quickControlKeys = computed<HomeQuickControlKey[]>(() => appStore.homeQuickControlOrder)
 const quickControls = computed(() => quickControlKeys.value.map(key => quickControlDefinitions[key]))
 const showQuickControls = computed(() => appStore.homeQuickControlsEnabled && quickControls.value.length > 0)
 
@@ -168,13 +166,6 @@ watch(
   { immediate: true },
 )
 
-function getNodeMonthlyCostCNY(node: NodeData): number {
-  if (excludeFreeNodes.value && isFreeNode(node))
-    return 0
-
-  return financeHelper.calculateMonthlyCostCNY(node, exchangeRates.value)
-}
-
 function sortNodesByComputedValue(nodes: NodeData[], selector: (node: NodeData) => number): NodeData[] {
   return nodes
     .map(node => ({ node, value: selector(node) }))
@@ -199,9 +190,6 @@ function getQuickControlNodes(nodes: NodeData[], control: HomeQuickControlKey | 
   switch (control) {
     case 'favorite':
       return nodes.filter(node => appStore.isFavoriteNode(node.uuid))
-    case 'monthlyCost':
-      result = sortNodesByComputedValue(nodes, getNodeMonthlyCostCNY)
-      break
     case 'totalTraffic':
       result = sortNodesByComputedValue(nodes, getTotalTraffic)
       break

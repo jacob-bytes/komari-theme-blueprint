@@ -43,7 +43,6 @@ export type GeneralCardKey
 
 export type HomeQuickControlKey
   = | 'favorite'
-    | 'monthlyCost'
     | 'totalTraffic'
     | 'upload'
     | 'download'
@@ -215,7 +214,6 @@ const LEGACY_GENERAL_CARD_SETTING_KEYS: Partial<Record<GeneralCardKey, string>> 
 
 const DEFAULT_HOME_QUICK_CONTROL_ORDER: HomeQuickControlKey[] = [
   'favorite',
-  'monthlyCost',
   'totalTraffic',
   'peak',
   'offline',
@@ -339,9 +337,9 @@ const GENERAL_CARD_PRESETS: Record<GeneralCardPreset, GeneralCardKey[]> = {
 }
 
 const HOME_QUICK_CONTROL_PRESETS: Record<HomeQuickControlPreset, HomeQuickControlKey[]> = {
-  basic: ['favorite', 'monthlyCost', 'peak', 'offline'],
+  basic: ['favorite', 'peak', 'offline'],
   traffic: ['favorite', 'totalTraffic', 'peak'],
-  ops: ['favorite', 'monthlyCost', 'offline', 'highLoad', 'expiring'],
+  ops: ['favorite', 'offline', 'highLoad', 'expiring'],
   full: DEFAULT_HOME_QUICK_CONTROL_ORDER,
   custom: DEFAULT_HOME_QUICK_CONTROL_ORDER,
 }
