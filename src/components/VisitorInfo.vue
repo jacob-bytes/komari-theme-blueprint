@@ -22,20 +22,25 @@ const mobileScrollIdleDelay = 700
 const mobileViewportQuery = '(max-width: 767px)'
 
 const show = ref(false)
-/** 左下角详情卡：默认收起，点击底部 Banner 的详情按钮展开，4 秒后自动折叠 */
+/** 就地展开/折叠：点击胶囊任意位置切换 */
 const detailOpen = ref(false)
-let detailHideTimer: number | undefined
+/** 4 秒无交互自动隐藏整个组件（刷新后重新出现） */
+const hideAll = ref(false)
+let hideAllTimer: number | undefined
+
+function resetHideAllTimer() {
+  if (hideAllTimer !== undefined)
+    window.clearTimeout(hideAllTimer)
+  hideAllTimer = window.setTimeout(() => {
+    hideAll.value = true
+    hideAllTimer = undefined
+  }, 4000)
+}
 
 function toggleDetail(force?: boolean) {
   detailOpen.value = force ?? !detailOpen.value
-  if (detailHideTimer !== undefined)
-    window.clearTimeout(detailHideTimer)
-  if (detailOpen.value) {
-    detailHideTimer = window.setTimeout(() => {
-      detailOpen.value = false
-      detailHideTimer = undefined
-    }, 4000)
-  }
+  // 任何交互都重置 4 秒隐藏计时
+  resetHideAllTimer()
 }
 const visitorLoading = ref(true)
 const visitorFailed = ref(false)
@@ -81,7 +86,6 @@ const visitorStatusText = computed(() => {
 })
 
 const windowsPattern = /Windows/i
-const macPattern = /Mac/i
 const androidPattern = /Android/i
 const iosPattern = /iPhone|iPad/i
 const edgPattern = /Edg/i
@@ -112,6 +116,8 @@ onMounted(async () => {
 
   window.setTimeout(() => {
     show.value = true
+    // 显示后启动 4 秒无交互自动隐藏计时
+    resetHideAllTimer()
   }, 600)
 
   try {
@@ -132,8 +138,8 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   if (scrollIdleTimer !== undefined)
     window.clearTimeout(scrollIdleTimer)
-  if (detailHideTimer !== undefined)
-    window.clearTimeout(detailHideTimer)
+  if (hideAllTimer !== undefined)
+    window.clearTimeout(hideAllTimer)
 })
 
 async function fetchVisitorData(): Promise<VisitorData | null> {
@@ -251,19 +257,6 @@ function readString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-function getOsIcon(): string {
-  const ua = navigator.userAgent
-  if (windowsPattern.test(ua))
-    return 'icon-park-outline:windows'
-  if (macPattern.test(ua))
-    return 'icon-park-outline:mac'
-  if (androidPattern.test(ua))
-    return 'icon-park-outline:android'
-  if (iosPattern.test(ua))
-    return 'icon-park-outline:apple'
-  return 'icon-park-outline:laptop'
-}
-
 function getBrowserName(): string {
   const ua = navigator.userAgent
   if (edgPattern.test(ua))
@@ -305,7 +298,7 @@ function formatDate(): string {
   <!-- 底部居中 IP 信息条：胶囊 ⇄ 就地双列展开（同一容器，无独立悬浮层） -->
   <Transition name="slide-up">
     <div
-      v-if="show && !mobileScrolling"
+      v-if="show && !mobileScrolling && !hideAll"
       class="fixed bottom-3 left-1/2 z-50 -translate-x-1/2 w-[440px] max-w-[calc(100vw-1.5rem)] md:bottom-4
              bg-white/55 dark:bg-black/50 backdrop-blur-md
              border border-white/40 dark:border-white/10
@@ -334,12 +327,12 @@ function formatDate(): string {
       <div v-else class="flex flex-col gap-2.5">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1.5">
           <div class="flex min-w-0 items-center gap-2">
-            <Icon icon="icon-park-outline:global" :width="13" :height="13" class="shrink-0 text-blue-500" />
+            <Icon icon="tabler:world" :width="13" :height="13" class="shrink-0 text-blue-500" />
             <span class="shrink-0 text-muted-foreground">地区</span>
             <span class="truncate font-medium">{{ compactLocation }}</span>
           </div>
           <div class="flex min-w-0 items-center gap-2">
-            <Icon :icon="getOsIcon()" :width="13" :height="13" class="shrink-0 text-muted-foreground" />
+            <Icon icon="tabler:device-desktop" :width="13" :height="13" class="shrink-0 text-blue-500" />
             <span class="shrink-0 text-muted-foreground">设备</span>
             <span class="truncate font-medium">{{ getOsName() }}</span>
           </div>
