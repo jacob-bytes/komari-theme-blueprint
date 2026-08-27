@@ -176,8 +176,8 @@ export function layoutLabels(
       .sort((a, b) => a.point.y - b.point.y)
       .map((item, index) => {
         const y = cy - ((rows.length - 1) * rowHeight) / 2 + index * rowHeight
-        const anchorX = alignLeft ? cx - radius - 8 : cx + radius + 8
-        const bendX = alignLeft ? cx - radius - 7 : cx + radius + 7
+        const anchorX = alignLeft ? cx - radius - 28 : cx + radius + 28
+        const bendX = alignLeft ? cx - radius - 18 : cx + radius + 18
         return {
           side: item.side,
           name: item.name,
@@ -219,7 +219,7 @@ export function scanArcPoints(
   cy: number,
   radius: number,
   theta: number,
-  segments = 8,
+  segments = 5,
   sweep = 1.0,
 ): ScanPolyline[] {
   const out: ScanPolyline[] = []
@@ -240,8 +240,8 @@ export function scanArcPoints(
     }
     out.push({
       pts,
-      alpha: i === 0 ? 0.72 : 0.4 * (1 - i / segments),
-      width: i === 0 ? 2 : 1,
+      alpha: i === 0 ? 0.72 : 0.5 * (1 - i / segments),
+      width: i === 0 ? 1.6 : 1,
     })
   }
   return out

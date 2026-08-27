@@ -18,9 +18,9 @@ const elementVisible = useElementVisibility(containerRef)
 const shouldRender = computed(() => documentVisibility.value === 'visible' && elementVisible.value)
 const shouldAutoRotate = computed(() => !appStore.stopEarth)
 
-const VIEW_W = 480
+const VIEW_W = 560
 const VIEW_H = 272
-const CX = VIEW_W / 2
+const CX = 280
 const CY = 130
 const R = 130
 
@@ -95,7 +95,7 @@ const svg = computed(() => {
     for (const row of rows) {
       const fade = Math.min(1, Math.max(0, (row.z - 0.02) * 3.5)).toFixed(2)
       s.push(`<polyline points="${row.dotX.toFixed(1)},${row.dotY.toFixed(1)} ${row.bendX},${row.dotY.toFixed(1)} ${row.anchorX},${row.textY}" fill="none" stroke="${color.grid}" stroke-width="0.7" stroke-dasharray="3 3" opacity="${fade}"/>`)
-      const anchor = row.side === 'left' ? 'start' : 'end'
+      const anchor = row.side === 'left' ? 'end' : 'start'
       s.push(`<text x="${row.anchorX}" y="${row.textY + 4}" font-size="11" fill="${color.text}" text-anchor="${anchor}" font-weight="600" opacity="${fade}">${esc(row.name)}</text>`)
     }
   }
@@ -179,7 +179,7 @@ function drawRadar() {
 }
 
 const { pause: pauseRadar, resume: resumeRadar } = useRafFn(() => {
-  radarAngle.value = (radarAngle.value + 0.018) % (Math.PI * 2)
+  radarAngle.value = (radarAngle.value + 0.011) % (Math.PI * 2)
   drawRadar()
 }, { immediate: false })
 
