@@ -10,6 +10,8 @@ export interface GlobePoint {
   y: number
   /** 球面前向（朝向观察者），用于裁剪背面 */
   visible: boolean
+  /** 深度（0~1，越近越大），用于背面渐隐 */
+  z: number
 }
 
 /**
@@ -39,6 +41,7 @@ export function ortho(
     x: cx + radius * x,
     y: cy - radius * y,
     visible: z > 0.02,
+    z,
   }
 }
 
@@ -144,41 +147,55 @@ export interface GlobeLabelRow {
   textY: number
   dotX: number
   dotY: number
+  /** 节点深度（用于背面渐隐） */
+  z: number
+  /** 折线引线的弯折点 X（球缘外侧水平折点） */
+  bendX: number
 }
 
 /**
- * 左右标签布局（防重叠：每侧按投影 y 排序后以固定行高堆叠）。
- * 输入：节点点 + 文本；输出：左右侧标签行（含引线两端坐标）。
+ * 左右标签布局（防重叠：每侧按投影 y 排序后按动态行高堆叠）。
+ * 行高随每侧数量自适应压缩（密集时自动减小间距，避免出界/交叉）。
  */
 export function layoutLabels(
   items: Array<{ name: string, point: GlobePoint, side: 'left' | 'right' }>,
   cx: number,
   cy: number,
   radius: number,
-  rowHeight: number,
 ): GlobeLabelRow[] {
   const left: Array<{ name: string, point: GlobePoint, side: 'left' | 'right' }> = []
   const right: Array<{ name: string, point: GlobePoint, side: 'left' | 'right' }> = []
   for (const item of items)
     (item.side === 'left' ? left : right).push(item)
-  const pack = (rows: typeof left, alignLeft: boolean): GlobeLabelRow[] => rows
-    .sort((a, b) => a.point.y - b.point.y)
-    .map((item, index) => {
-      const y = topOf(rows.length, index, cy, rowHeight)
-      const anchorX = alignLeft ? cx - radius - 8 : cx + radius + 8
-      return {
-        side: item.side,
-        name: item.name,
-        anchorX: alignLeft ? anchorX : anchorX,
-        textY: y,
-        dotX: item.point.x,
-        dotY: item.point.y,
-      }
-    })
+  const pack = (rows: typeof left, alignLeft: boolean): GlobeLabelRow[] => {
+    if (!rows.length)
+      return []
+    // 动态行高：可用高（球高）除以侧标签数，压缩区间 [16, 24]
+    const rowHeight = Math.min(24, Math.max(16, (radius * 2) / rows.length))
+    return rows
+      .sort((a, b) => a.point.y - b.point.y)
+      .map((item, index) => {
+        const y = cy - ((rows.length - 1) * rowHeight) / 2 + index * rowHeight
+        const anchorX = alignLeft ? cx - radius - 8 : cx + radius + 8
+        const bendX = alignLeft ? cx - radius - 7 : cx + radius + 7
+        return {
+          side: item.side,
+          name: item.name,
+          anchorX,
+          textY: y,
+          dotX: item.point.x,
+          dotY: item.point.y,
+          z: item.point.z,
+          bendX,
+        }
+      })
+  }
   return [...pack(left, true), ...pack(right, false)]
 }
 
-function topOf(count: number, index: number, cy: number, rowHeight: number): number {
-  const half = (count - 1) * rowHeight / 2
-  return cy - half + index * rowHeight
+/** 视场状态栏文本：ORTHOGRAPHIC · 107°E 30°N · MEDIUM */
+export function formatViewportStatus(lon: number, lat: number): string {
+  const lonPart = `${Math.abs(lon).toFixed(0)}°${lon >= 0 ? 'E' : 'W'}`
+  const latPart = `${Math.abs(lat).toFixed(0)}°${lat >= 0 ? 'N' : 'S'}`
+  return `ORTHOGRAPHIC · ${lonPart} ${latPart} · MEDIUM`
 }

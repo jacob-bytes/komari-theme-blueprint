@@ -983,6 +983,8 @@ const useAppStore = defineStore('app', () => {
 
   const colorVisionFriendly = computed<boolean>(() => colorVisionMode.value === 'accessible')
 
+  const globeRadarEnabled = computed<boolean>(() => readBooleanSetting(themeSettings.value, 'globeRadarEnabled', true))
+
   const homeQuickControlsEnabled = computed<boolean>(() => readBooleanSetting(themeSettings.value, 'homeQuickControlsEnabled', true))
 
   const homeQuickControlOrder = computed<HomeQuickControlKey[]>(() => {
@@ -1223,6 +1225,7 @@ const useAppStore = defineStore('app', () => {
     homeToolsEnabled,
     homeAdvancedToolsVisible,
     colorVisionMode,
+    globeRadarEnabled,
     colorVisionFriendly,
     visitorAuditSupported,
     visitorAuditEnabled,
