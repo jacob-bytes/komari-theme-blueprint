@@ -212,7 +212,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="line-globe-host relative h-full w-full select-none touch-none">
+  <div ref="containerRef" class="line-globe-host relative h-full w-full min-h-56 select-none touch-none">
     <svg
       :viewBox="`0 0 ${VIEW_W} ${VIEW_H}`"
       class="line-globe-svg absolute inset-0 h-full w-full"

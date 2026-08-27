@@ -41,9 +41,19 @@ async function retryConnection(): Promise<void> {
 }
 
 onMounted(async () => {
+  // iOS Safari 滚动锚定/恢复滚动位置会导致初始视口下坠，强制回到顶部
+  try {
+    if ('scrollRestoration' in history)
+      history.scrollRestoration = 'manual'
+  }
+  catch {
+    // 忽略不支持的环境
+  }
+  window.scrollTo(0, 0)
   try {
     await initApp()
     await nextTick()
+    window.scrollTo(0, 0)
     isReady.value = true
   }
   catch (error) {

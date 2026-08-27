@@ -732,7 +732,7 @@ const cardGridClass = computed(() => {
     ? 'h-auto -mt-42 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 auto-rows-[5rem] md:auto-rows-[7rem] gap-2'
     : 'h-42 -mt-42 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 grid-rows-2 gap-2'
 })
-const cardClass = 'group relative z-10 h-full bg-card border-border hover:bg-secondary transition-all'
+const cardClass = 'group relative z-10 h-full bg-card/75 backdrop-blur-sm md:bg-card md:backdrop-blur-none border-border hover:bg-secondary transition-all'
 const cardPositionClasses = [
   'col-span-4 row-span-1 col-start-1 row-start-1',
   'col-span-4 row-span-1 col-start-1 row-start-2',
@@ -855,7 +855,7 @@ onMounted(async () => {
                 class="flex items-baseline gap-1 min-w-0"
                 :style="getMetricSwitchStyle(index)"
               >
-                <span class="text-md md:text-2xl font-bold leading-none tracking-tight truncate">
+                <span class="text-[11px] sm:text-md md:text-2xl font-bold leading-none tracking-tight truncate">
                   {{ card.value }}
                 </span>
                 <span v-if="card.unit" :class="unitClass">
