@@ -712,8 +712,8 @@ const wrapperClass = computed(() => {
     return 'p-3 sm:p-4 grid grid-cols-12 gap-2 sm:gap-3 h-auto min-h-[40rem] sm:min-h-[30rem] md:min-h-[36rem] lg:min-h-[40rem]'
 
   return hasExtraCards.value
-    ? 'p-4 grid grid-cols-12 gap-2 h-auto md:min-h-58'
-    : 'p-4 grid grid-cols-12 grid-rows-1 gap-2 h-auto md:h-58'
+    ? 'p-4 grid grid-cols-12 gap-2 h-auto md:min-h-76'
+    : 'p-4 grid grid-cols-12 grid-rows-1 gap-2 h-auto md:h-76'
 })
 const earthClass = computed(() => {
   if (isTiledEarth.value)

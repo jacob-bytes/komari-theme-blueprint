@@ -18,8 +18,8 @@ const elementVisible = useElementVisibility(containerRef)
 const shouldRender = computed(() => documentVisibility.value === 'visible' && elementVisible.value)
 const shouldAutoRotate = computed(() => !appStore.stopEarth)
 
-const VIEW_W = 500
-const VIEW_H = 284
+const VIEW_W = 480
+const VIEW_H = 260
 const CX = VIEW_W / 2
 const CY = VIEW_H / 2
 const R = 130
@@ -36,7 +36,7 @@ let lastPointerY = 0
 const clampLat = (v: number) => Math.min(65, Math.max(-65, v))
 const wrapLon = (v: number) => ((v + 540) % 360) - 180
 
-const { regionClusters, totalServers } = useNodeGeoClusters({ nodes: () => props.nodes })
+const { regionClusters } = useNodeGeoClusters({ nodes: () => props.nodes })
 
 interface LabelItem {
   name: string
@@ -94,7 +94,6 @@ const svg = computed(() => {
     }
   }
 
-  s.push(`<text x="${CX}" y="${VIEW_H - 8}" font-size="9" fill="${color.grid}" text-anchor="middle" letter-spacing="2">KOMARI · LINE GLOBE · ${totalServers.value} NODES</text>`)
   return s.join('')
 })
 
