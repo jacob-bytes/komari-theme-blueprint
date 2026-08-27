@@ -18,18 +18,18 @@ const elementVisible = useElementVisibility(containerRef)
 const shouldRender = computed(() => documentVisibility.value === 'visible' && elementVisible.value)
 const shouldAutoRotate = computed(() => !appStore.stopEarth)
 
-const VIEW_W = 560
-const VIEW_H = 320
+const VIEW_W = 500
+const VIEW_H = 284
 const CX = VIEW_W / 2
 const CY = VIEW_H / 2
-const R = 150
+const R = 130
 
 /** 初始视角：面向亚洲（东经 100，北纬 20） */
 const INITIAL_LON = 100
 const INITIAL_LAT = 18
-let globeLon = INITIAL_LON
-let globeLat = INITIAL_LAT
-let isDragging = false
+const globeLon = ref(INITIAL_LON)
+const globeLat = ref(INITIAL_LAT)
+const isDragging = ref(false)
 let lastPointerX = 0
 let lastPointerY = 0
 
@@ -60,22 +60,19 @@ const svg = computed(() => {
   s.push(`<circle cx="${CX}" cy="${CY}" r="${R - 2}" fill="none" stroke="${color.grid}" stroke-width="0.75"/>`)
 
   // 经纬网格
-  for (const d of meridianPaths(globeLon, globeLat, CX, CY, R, 30))
+  for (const d of meridianPaths(globeLon.value, globeLat.value, CX, CY, R, 30))
     s.push(`<path d="${d}" fill="none" stroke="${color.grid}" stroke-width="0.6"/>`)
-  for (const d of parallelPaths(globeLon, globeLat, CX, CY, R, 30))
+  for (const d of parallelPaths(globeLon.value, globeLat.value, CX, CY, R, 30))
     s.push(`<path d="${d}" fill="none" stroke="${color.grid}" stroke-width="0.6"/>`)
-  // 赤道强调
-  for (const d of parallelPaths(globeLon, globeLat, CX, CY, R, 30).length ? [] : [])
-    s.push(d)
 
   // 海岸线（面向大陆）
   for (const polygon of WORLD_OUTLINES)
-    s.push(`<path d="${coastPath(polygon, globeLon, globeLat, CX, CY, R)}" fill="none" stroke="${color.coast}" stroke-width="1.1" stroke-linejoin="round" opacity="0.9"/>`)
+    s.push(`<path d="${coastPath(polygon, globeLon.value, globeLat.value, CX, CY, R)}" fill="none" stroke="${color.coast}" stroke-width="1.1" stroke-linejoin="round" opacity="0.9"/>`)
 
   // 地区节点标记
   const pts: Array<{ name: string, coord: [number, number], point: GlobePoint }> = []
   for (const item of labelItems.value) {
-    const p = projectNode(item.coord, globeLon, globeLat, CX, CY, R)
+    const p = projectNode(item.coord, globeLon.value, globeLat.value, CX, CY, R)
     if (p)
       pts.push({ name: item.name, coord: item.coord, point: p })
   }
@@ -102,32 +99,32 @@ const svg = computed(() => {
 })
 
 function onPointerDown(e: PointerEvent) {
-  isDragging = true
+  isDragging.value = true
   lastPointerX = e.clientX
   lastPointerY = e.clientY
   ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
 }
 
 function onPointerMove(e: PointerEvent) {
-  if (!isDragging)
+  if (!isDragging.value)
     return
   const dx = e.clientX - lastPointerX
   const dy = e.clientY - lastPointerY
   lastPointerX = e.clientX
   lastPointerY = e.clientY
-  globeLon = wrapLon(globeLon - dx * 0.36)
-  globeLat = clampLat(globeLat + dy * 0.3)
+  globeLon.value = wrapLon(globeLon.value - dx * 0.36)
+  globeLat.value = clampLat(globeLat.value + dy * 0.3)
 }
 
 function onPointerUp() {
-  isDragging = false
+  isDragging.value = false
 }
 
 const { pause: pauseRaf, resume: resumeRaf } = useRafFn(() => {
   if (!shouldRender.value)
     return
-  if (!isDragging && shouldAutoRotate.value)
-    globeLon = wrapLon(globeLon + 0.06)
+  if (!isDragging.value && shouldAutoRotate.value)
+    globeLon.value = wrapLon(globeLon.value + 0.06)
 }, { immediate: false })
 
 onMounted(() => {
