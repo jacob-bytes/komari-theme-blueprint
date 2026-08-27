@@ -1,6 +1,6 @@
 # v3 Architecture
 
-Komari Theme Glassmorphism v3 moves new code toward a layered architecture:
+blueprint moves new code toward a layered architecture:
 
 ```text
 Vue Component
