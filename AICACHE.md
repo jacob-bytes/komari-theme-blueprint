@@ -726,3 +726,18 @@
 - Implemented 7 deterministic Playwright baselines: light desktop home, dark mobile home, accessible desktop list, Cobe and tiled earth layouts, light desktop detail and dark mobile detail. All use mocked Komari API/RPC/visitor data, fixed time, disabled animations and hidden dynamic 3D canvas pixels while retaining globe layout boundaries.
 - First baseline generation and repeated comparison both passed 7/7 with system Chrome. Windows system-channel Chrome did not exit cleanly after reporting results, so release validation does not treat that local channel teardown as a product failure; CI installs and runs Playwright's managed Chromium.
 - Added the independent `Visual Regression` workflow for pull requests and `main`, with actual/diff/HTML report artifacts retained for 14 days on failure. Release target is v3.3.0.
+
+## 2026-08-27 · 线状图纸地球（line-grid）MVP
+
+- **目标**：参考 Komari-line-grid（MIT）实现"线状正交投影地球"，作为 cobe 点阵地球的**可选样式**（`earthRenderer: 'line-grid'`），后台可切换。
+- **实现**：
+  - `src/data/world-outlines.ts`：移植 79 个多边形海岸线数据（19KB，MIT 注明上游 Komari-line-grid / selkk-lab）。
+  - `src/utils/lineGlobe.ts`：纯函数（正交投影 ortho / 海岸线 path / 经纬网格 / 节点投影 / 左右标签堆叠布局）。
+  - `src/components/NodeEarthLineGridGlobe.vue`：SVG 字符串（v-html + esc 转义）、拖拽（pointer 事件）、自动旋转（useRafFn，stopEarth 控制）、地区聚合标签（useNodeGeoClusters）、明暗主题（--globe-* CSS 变量）、移动端自适应（viewBox 缩放）。
+  - `NodeGeneralCards.vue`：`earthRenderer !== 'line-grid'` → cobe，否则 line-grid。
+  - `app.ts`：EarthRenderer 类型/校验加 'line-grid'。
+  - `komari-theme.json`：加回地球样式（cobe/line-grid）、stopEarth、hideEarth 后台配置（02 首页布局）。
+  - `main.css`：--globe-rim/grid/coast/point/text 亮暗两套。
+- **验证**：type-check/lint/build ✅；视觉回归 11 绿（line-grid 截图确认渲染正常，线稿风与蓝图契合）。
+- **已知待办**：MVP 单精度档；无右侧地区统计面板；每节点标签（当前地区聚合）；移动端未专项截测；后续可删 cobe（保留双模式先看效果）。
+- **注意事项**：webServer 用 `vite preview`（dist）——改了源码必须 `bun run build` 后再跑 fixture 测试，否则用旧 dist；GitHub Release 验证后确认发布。

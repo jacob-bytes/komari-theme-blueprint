@@ -87,7 +87,7 @@ type Lang = 'zh-CN' | 'en-US'
 type NodeViewMode = 'card' | 'list'
 type NodeCardSize = 'mini' | 'compact' | 'comfortable' | 'large'
 type RpcTransportMode = 'websocket' | 'http'
-type EarthRenderer = 'realistic' | 'cobe' | 'tiled'
+type EarthRenderer = 'realistic' | 'cobe' | 'tiled' | 'line-grid'
 type ColorVisionMode = 'default' | 'accessible'
 export type ChartDashboardCardKey
   = | 'cpu'
@@ -858,7 +858,7 @@ const useAppStore = defineStore('app', () => {
   }
 
   function isValidEarthRenderer(value: unknown): value is EarthRenderer {
-    return value === 'realistic' || value === 'cobe' || value === 'tiled'
+    return value === 'realistic' || value === 'cobe' || value === 'tiled' || value === 'line-grid'
   }
 
   const nodeCardSize = computed<NodeCardSize>(() => {

@@ -7,6 +7,7 @@ import { Icon } from '@iconify/vue'
 import { useNow } from '@vueuse/core'
 import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
 import NodeEarthCobeGlobe from '@/components/NodeEarthCobeGlobe.vue'
+import NodeEarthLineGridGlobe from '@/components/NodeEarthLineGridGlobe.vue'
 import { CardX } from '@/components/ui/card-x'
 import { DataTooltip } from '@/components/ui/data-tooltip'
 import { UI_CONFIG } from '@/constants/ui'
@@ -809,7 +810,12 @@ onMounted(async () => {
 <template>
   <div v-if="shouldRenderHeader" :class="wrapperClass">
     <NodeEarthCobeGlobe
-      v-if="showEarth"
+      v-if="showEarth && appStore.earthRenderer !== 'line-grid'"
+      :nodes="globeNodes"
+      :class="earthClass"
+    />
+    <NodeEarthLineGridGlobe
+      v-else-if="showEarth"
       :nodes="globeNodes"
       :class="earthClass"
     />

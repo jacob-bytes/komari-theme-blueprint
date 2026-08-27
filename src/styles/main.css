@@ -50,6 +50,12 @@
   --font-sans: 'JetBrains Mono', ui-monospace, Menlo, monospace;
   /* 地球外圈大气层发光：亮色极淡，暗色荧光青蓝 */
   --globe-glow: rgb(100 160 255 / 0.18);
+  /* 线状图纸地球（line-grid）配色 */
+  --globe-rim: rgb(29 78 137 / 0.25);
+  --globe-grid: rgb(29 78 137 / 0.22);
+  --globe-coast: rgb(29 78 137 / 0.85);
+  --globe-point: #1d4e89;
+  --globe-text: #1d4e89;
 }
 
 /* ===== blueprint 主题 · 晒图蓝（dark）设计令牌 ===== */
@@ -91,6 +97,12 @@
   --chart-4: #ff8f86;
   --chart-5: #b8a8f0;
   --globe-glow: rgb(0 240 255 / 0.45);
+  /* 线状图纸地球（line-grid）配色 · 晒图蓝 */
+  --globe-rim: rgb(233 242 255 / 0.28);
+  --globe-grid: rgb(233 242 255 / 0.18);
+  --globe-coast: rgb(233 242 255 / 0.75);
+  --globe-point: #e9f2ff;
+  --globe-text: #e9f2ff;
 }
 
 @theme inline {

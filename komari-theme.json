@@ -2,7 +2,7 @@
   "name": "blueprint",
   "short": "blueprint",
   "description": "A Blueprint theme for Komari",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "author": "jacob-bytes",
   "url": "https://github.com/jacob-bytes/komari-theme-blueprint",
   "preview": "preview-blueprint.png",
@@ -21,6 +21,9 @@
       { "key": "alertEnabled", "name": "启用公告", "type": "switch", "default": false, "help": "在首页显示自定义公告" },
       { "key": "alertTitle", "name": "公告标题", "type": "string", "default": "", "help": "公告的标题内容" },
       { "key": "alertContent", "name": "公告内容", "type": "richtext", "default": "", "help": "公告的详细内容（支持简单 Markdown 格式）" },
+      { "key": "earthRenderer", "name": "地球样式", "type": "select", "default": "cobe", "options": "cobe,line-grid", "help": "cobe=点阵星球； line-grid=线状图纸地球（经纬网格+海岸线+标签引线）。" },
+      { "key": "stopEarth", "name": "停止地球旋转", "type": "switch", "default": false, "help": "开启后地球默认不自动旋转，用户仍可手动拖拽查看" },
+      { "key": "hideEarth", "name": "隐藏地球", "type": "switch", "default": false, "help": "隐藏地球后仅显示总览卡片" },
       { "key": "visitorInfoEnabled", "name": "显示访客信息", "type": "switch", "default": true, "help": "显示底部访客 IP 条和左下角访客详情卡片" },
       { "key": "colorVisionMode", "name": "色觉辅助配色", "type": "select", "default": "标准", "options": "标准,色觉友好", "help": "色觉友好使用蓝、蓝绿、橙、朱红、紫红，并为图表和状态增加线型、纹理、文字或图标区分。" },
 
