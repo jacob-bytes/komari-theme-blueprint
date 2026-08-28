@@ -6,7 +6,7 @@ import type { MetricQueryParams, MetricSeries, PingTaskInfo, StatusRecord } from
 import { Icon } from '@iconify/vue'
 import { useIntervalFn } from '@vueuse/core'
 import dayjs from 'dayjs'
-import { computed, onMounted, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, onMounted, provide, reactive, ref, shallowRef, watch, watchEffect } from 'vue'
 import VChart from 'vue-echarts'
 import MetricChartHeader from '@/components/MetricChartHeader.vue'
 import MetricSeriesChartCard from '@/components/MetricSeriesChartCard.vue'
@@ -184,6 +184,9 @@ const availableViews = computed(() => {
 
 // 当前选中的视图
 const selectedView = ref<string>('实时')
+
+const chartPaused = ref(false)
+provide('bpChartPaused', chartPaused)
 const customStartInput = ref('')
 const customEndInput = ref('')
 const selectedHours = computed(() => {
@@ -1642,6 +1645,15 @@ onMounted(() => {
                 <span>%</span>
               </div>
               <span v-else>-</span>
+              <Button
+                variant="ghost" size="icon-sm"
+                class="mt-0.5"
+                :aria-label="chartPaused ? '继续图表' : '暂停图表'"
+                :title="chartPaused ? '继续图表' : '暂停图表'"
+                @click="chartPaused = !chartPaused"
+              >
+                <Icon :icon="chartPaused ? 'tabler:player-play' : 'tabler:player-pause'" :width="14" :height="14" />
+              </Button>
             </MetricChartHeader>
           </template>
           <div class="h-48">

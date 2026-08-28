@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import type { Ref } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import VChart from 'vue-echarts'
 import { CardX } from '@/components/ui/card-x'
 import { formatBytes } from '@/utils/helper'
@@ -128,6 +129,14 @@ const chartOption = computed(() => ({
     lineStyle: { width: 1.6, type: item.dashed ? 'dashed' : 'solid', color: item.color },
   })),
 }))
+/** 图表暂停（父层 provide）：暂停时冻结 Option，图表停留在当前画面 */
+const chartPaused = inject<Ref<boolean>>('bpChartPaused', ref(false))
+const frozenOption = ref<object | null>(null)
+watch(chartOption, (opt) => {
+  if (!chartPaused.value)
+    frozenOption.value = opt
+})
+const displayOption = computed<any>(() => (chartPaused.value && frozenOption.value ? frozenOption.value : chartOption.value))
 </script>
 
 <template>
@@ -142,7 +151,7 @@ const chartOption = computed(() => ({
       </MetricChartHeader>
     </template>
     <div class="h-48">
-      <VChart :option="chartOption" autoresize />
+      <VChart :option="displayOption" autoresize />
     </div>
   </CardX>
 </template>

@@ -79,9 +79,14 @@ onDeactivated(() => {
 })
 
 const searchText = ref('')
+
 const debouncedSearchText = ref('')
 const activeHomeTool = ref<HomeToolKey>('nodes')
 const activeQuickControl = ref<HomeQuickControlKey | null>(null)
+function resetHomeFilters() {
+  searchText.value = ''
+  activeQuickControl.value = null
+}
 const exchangeRates = ref(financeHelper.DEFAULT_EXCHANGE_RATES)
 const excludeFreeNodes = ref(true)
 const pingDialogNode = ref<NodeData | null>(null)
@@ -567,7 +572,13 @@ const nodeCardGridClass = computed(() => {
               @ping-click="openPingDialog"
             />
             <div v-else class="text-muted-foreground text-center py-8">
-              <Empty :description="emptyDescription" />
+              <Empty :description="emptyDescription">
+                <template v-if="debouncedSearchText.trim() || activeQuickControl" #extra>
+                  <Button variant="ghost" size="sm" class="text-xs" @click="resetHomeFilters">
+                    清除搜索与筛选
+                  </Button>
+                </template>
+              </Empty>
             </div>
           </TabsContent>
         </Tabs>
