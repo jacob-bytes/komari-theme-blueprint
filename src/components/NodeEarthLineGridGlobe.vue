@@ -39,7 +39,7 @@ const wrapLon = (v: number) => ((v + 540) % 360) - 180
 /** 视场状态栏（拖拽实时刷新） */
 const viewportStatus = computed(() => formatViewportStatus(globeLon.value, globeLat.value))
 
-const { regionClusters } = useNodeGeoClusters({ nodes: () => props.nodes })
+const { regionClusters, totalServers, onlineServers, offlineServers } = useNodeGeoClusters({ nodes: () => props.nodes })
 
 interface LabelItem {
   name: string
@@ -223,6 +223,19 @@ onBeforeUnmount(() => {
       @pointercancel="onPointerUp"
       v-html="svg"
     />
+    <div
+      v-if="totalServers > 0"
+      class="absolute top-6 md:top-12 left-0 z-10 text-[10px] text-muted-foreground pointer-events-none flex gap-2 items-center bg-background/85 shadow-sm ring-1 ring-border/60 rounded px-2 py-0.5"
+    >
+      <div v-if="onlineServers > 0" class="flex items-center gap-1">
+        <span class="inline-block size-1.5 rounded-full bg-green-600 animate-pulse" />
+        <span class="text-[var(--status-ok)]">{{ onlineServers }}</span>
+      </div>
+      <div v-if="offlineServers > 0" class="flex items-center gap-1">
+        <span class="inline-block size-1.5 rounded-full bg-yellow-600 animate-pulse" />
+        <span class="text-[var(--status-warn)]">{{ offlineServers }}</span>
+      </div>
+    </div>
     <canvas
       ref="radarCanvasRef"
       class="radar-canvas pointer-events-none absolute inset-0 h-full w-full"
