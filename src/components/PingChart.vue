@@ -836,7 +836,7 @@ onBeforeUnmount(() => {
           <div
             v-for="task in latestValues" :key="task.id"
             :data-ping-task-id="task.id"
-            class="p-3 rounded-md bg-card border border-border hover:bg-secondary hover:shadow-[0_0_0_2px] hover:shadow-primary/10 flex gap-3 cursor-pointer select-none transition-all items-center"
+            class="p-3 rounded-xl bg-card border border-border hover:bg-secondary hover:shadow-[0_0_0_2px] hover:shadow-primary/10 flex gap-3 cursor-pointer select-none transition-all items-center"
             :class="[!selectedTaskIds.includes(task.id) && 'opacity-30']"
             :onmouseover="(e: MouseEvent) => ((e.currentTarget as HTMLElement).style.borderColor = task.color)"
             :onmouseout="(e: MouseEvent) => ((e.currentTarget as HTMLElement).style.borderColor = '')"
@@ -955,7 +955,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- 图表 -->
-        <div class="h-80 bg-card border border-border p-4 rounded-md">
+        <div class="h-80 bg-card border border-border p-4 rounded-xl">
           <VChart :option="pingChartOption" autoresize />
         </div>
       </template>
