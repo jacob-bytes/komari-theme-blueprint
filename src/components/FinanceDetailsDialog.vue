@@ -36,6 +36,17 @@ const emit = defineEmits<{
 }>()
 
 /** 拆分 费用/周期 字符串为 [数值, 周期]（单位小字展示） */
+
+/** 到期标签 → [天数 | null, 原标签]（数字加粗/近到期 Warning 用） */
+function splitExpiry(label: string): [number | null, string] {
+  const days = Number.parseInt(label, 10)
+  return Number.isFinite(days) ? [days, label] : [null, label]
+}
+
+/** 金额值去掉币种前缀（币种已用 Tag 展示） */
+function stripCurrency(value: string, currency: string): string {
+  return value.split(currency).join('').trim()
+}
 function splitPrice(raw: string): [string, string] {
   const idx = raw.indexOf('/')
   if (idx === -1)
@@ -287,7 +298,7 @@ function formatTraffic(tib: number): string {
         </div>
       </div>
 
-      <Tabs v-model="activeTab" class="gap-4">
+      <Tabs v-model="activeTab" class="grid grid-cols-1 gap-4">
         <div class="flex flex-wrap items-center gap-2">
           <TabsList class="h-9 min-w-0 flex-1 overflow-x-auto sm:flex-none">
             <TabsTrigger value="fixed">
@@ -340,13 +351,13 @@ function formatTraffic(tib: number): string {
                   <th class="px-3 py-2 font-medium">
                     节点
                   </th>
-                  <th class="px-3 py-2 font-medium">
+                  <th class="px-3 py-2 text-right font-medium">
                     固定费用
                   </th>
-                  <th class="px-3 py-2 font-medium">
+                  <th class="px-3 py-2 text-right font-medium">
                     到期
                   </th>
-                  <th class="px-3 py-2 font-medium">
+                  <th class="px-3 py-2 text-right font-medium">
                     剩余价值
                   </th>
                   <th class="px-3 py-2 text-right font-medium">
@@ -361,19 +372,26 @@ function formatTraffic(tib: number): string {
                       {{ row.node.name }}
                     </div>
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2.5">
+                  <td class="whitespace-nowrap px-3 py-2.5 text-right">
                     <template v-for="(part, pi) in splitPrice(formatPriceWithCycle(row.node.price, row.node.billing_cycle, row.node.currency))" :key="pi">
-                      <span v-if="pi === 0" class="font-medium">{{ part }}</span>
+                      <span v-if="pi === 0" class="font-medium">{{ stripCurrency(part, row.node.currency) }}</span>
                       <span v-else class="text-[10px] text-muted-foreground">{{ part }}</span>
                     </template>
+                    <span class="ml-1 rounded-sm bg-muted/60 px-1 py-0.5 text-[9px] font-medium text-muted-foreground">{{ row.node.currency }}</span>
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2.5">
-                    {{ row.expiryLabel }}
+                  <td class="whitespace-nowrap px-3 py-2.5 text-right">
+                    <template v-if="splitExpiry(row.expiryLabel)[0] !== null">
+                      <span
+                        :class="(splitExpiry(row.expiryLabel)[0] as number) <= 30 ? 'font-semibold tabular-nums text-[var(--status-warn)]' : 'font-medium tabular-nums'"
+                      >{{ splitExpiry(row.expiryLabel)[0] }}</span>
+                      <span class="text-[10px] text-muted-foreground"> 天</span>
+                    </template>
+                    <span v-else>{{ row.expiryLabel }}</span>
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2.5">
+                  <td class="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">
                     {{ formatRemainingValue(row.node, row.remainingCNY) }}
                   </td>
-                  <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums">
+                  <td class="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums text-primary">
                     {{ formatDisplayAmount(row.monthlyCNY) }}
                   </td>
                 </tr>
@@ -562,9 +580,9 @@ function formatTraffic(tib: number): string {
 
 <style scoped>
 .finance-table tbody tr:nth-child(even) {
-  background: color-mix(in srgb, var(--muted) 20%, transparent);
+  background: color-mix(in srgb, var(--muted) 38%, transparent);
 }
-.finance-table tbody tr:nth-child(even):hover {
-  background: color-mix(in srgb, var(--muted) 30%, transparent);
+.finance-table tbody tr:hover {
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
 }
 </style>
