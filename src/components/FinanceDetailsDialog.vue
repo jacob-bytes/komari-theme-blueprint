@@ -16,15 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import * as financeHelper from '@/utils/financeHelper'
 import { formatPriceWithCycle, getDaysUntilExpired, getExpireStatus, isFreeNode, isFreePrice } from '@/utils/tagHelper'
 
-type FinanceTab = 'fixed' | 'metered' | 'rates'
-interface UsageSnapshot {
-  up: number | null
-  down: number | null
-  uptime: number | null
-  online: boolean
-  statusUpdatedAt: string
-}
-
 const props = defineProps<{
   open: boolean
   nodes: NodeData[]
@@ -43,6 +34,24 @@ const emit = defineEmits<{
   'update:rate': [currency: CurrencyCode, value: number]
   'resetRates': []
 }>()
+
+/** 拆分 费用/周期 字符串为 [数值, 周期]（单位小字展示） */
+function splitPrice(raw: string): [string, string] {
+  const idx = raw.indexOf('/')
+  if (idx === -1)
+    return [raw, '']
+  return [raw.slice(0, idx).trimEnd(), raw.slice(idx)]
+}
+
+type FinanceTab = 'fixed' | 'metered' | 'rates'
+
+interface UsageSnapshot {
+  up: number | null
+  down: number | null
+  uptime: number | null
+  online: boolean
+  statusUpdatedAt: string
+}
 
 const activeTab = ref<FinanceTab>('fixed')
 const visibleNodes = computed(() => props.nodes.filter(node => !props.excludeFree || !isFreeNode(node)))
@@ -251,8 +260,8 @@ function formatTraffic(tib: number): string {
     @update:open="emit('update:open', $event)"
   >
     <div class="space-y-4">
-      <div class="grid grid-cols-3 divide-x divide-border/60 border-y border-border/60 py-3 text-center">
-        <div class="min-w-0 px-2">
+      <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div class="min-w-0 rounded-md bg-muted/25 px-3 py-2.5">
           <div class="text-xs text-muted-foreground">
             剩余价值
           </div>
@@ -260,7 +269,7 @@ function formatTraffic(tib: number): string {
             {{ formatDisplayAmount(totalRemainingCNY) }}
           </div>
         </div>
-        <div class="min-w-0 px-2">
+        <div class="min-w-0 rounded-md bg-muted/25 px-3 py-2.5">
           <div class="text-xs text-muted-foreground">
             固定月均支出
           </div>
@@ -268,7 +277,7 @@ function formatTraffic(tib: number): string {
             {{ formatDisplayAmount(totalMonthlyCNY) }}
           </div>
         </div>
-        <div class="min-w-0 px-2">
+        <div class="min-w-0 rounded-md bg-muted/25 px-3 py-2.5">
           <div class="text-xs text-muted-foreground">
             当前节点估算
           </div>
@@ -280,7 +289,7 @@ function formatTraffic(tib: number): string {
 
       <Tabs v-model="activeTab" class="gap-4">
         <div class="flex flex-wrap items-center gap-2">
-          <TabsList class="h-9 min-w-0 flex-1 sm:flex-none">
+          <TabsList class="h-9 min-w-0 flex-1 overflow-x-auto sm:flex-none">
             <TabsTrigger value="fixed">
               <Icon icon="tabler:calendar-dollar" />固定账单
             </TabsTrigger>
@@ -325,7 +334,7 @@ function formatTraffic(tib: number): string {
           </div>
 
           <div class="overflow-x-auto rounded-md border border-border/60">
-            <table class="w-full min-w-[620px] text-left text-xs">
+            <table class="finance-table w-full min-w-[620px] text-left text-xs">
               <thead class="bg-muted/45 text-muted-foreground">
                 <tr>
                   <th class="px-3 py-2 font-medium">
@@ -353,7 +362,10 @@ function formatTraffic(tib: number): string {
                     </div>
                   </td>
                   <td class="whitespace-nowrap px-3 py-2.5">
-                    {{ formatPriceWithCycle(row.node.price, row.node.billing_cycle, row.node.currency) }}
+                    <template v-for="(part, pi) in splitPrice(formatPriceWithCycle(row.node.price, row.node.billing_cycle, row.node.currency))" :key="pi">
+                      <span v-if="pi === 0" class="font-medium">{{ part }}</span>
+                      <span v-else class="text-[10px] text-muted-foreground">{{ part }}</span>
+                    </template>
                   </td>
                   <td class="whitespace-nowrap px-3 py-2.5">
                     {{ row.expiryLabel }}
@@ -547,3 +559,12 @@ function formatTraffic(tib: number): string {
     </div>
   </AppDialog>
 </template>
+
+<style scoped>
+.finance-table tbody tr:nth-child(even) {
+  background: color-mix(in srgb, var(--muted) 20%, transparent);
+}
+.finance-table tbody tr:nth-child(even):hover {
+  background: color-mix(in srgb, var(--muted) 30%, transparent);
+}
+</style>
