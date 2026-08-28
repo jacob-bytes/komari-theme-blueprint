@@ -833,7 +833,7 @@ onMounted(async () => {
       <div
         v-if="summaryNodes.length > 0"
         class="absolute top-6 md:top-10 z-10 text-[10px] text-muted-foreground pointer-events-none flex gap-2 items-center bg-background/85 shadow-sm ring-1 ring-border/60 rounded px-2 py-0.5"
-        :class="appStore.earthRenderer === 'line-grid' ? 'left-0 md:left-[32%]' : 'left-0 md:left-[calc(50%-224px)]'"
+        :class="appStore.earthRenderer === 'line-grid' ? 'left-0 md:left-[calc(32%-74px)]' : 'left-0 md:left-[calc(50%-298px)]'"
       >
         <div v-if="globeOnlineCount > 0" class="flex items-center gap-1">
           <span class="inline-block size-1.5 rounded-full bg-green-600 animate-pulse" />
