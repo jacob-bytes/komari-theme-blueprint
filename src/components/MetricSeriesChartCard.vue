@@ -142,7 +142,7 @@ const displayOption = computed<any>(() => (chartPaused.value && frozenOption.val
 <template>
   <CardX
     size="small"
-    class="bg-background/50 border-none hover:bg-background transition-all rounded-md"
+    class="bg-background/50 border-none hover:bg-background transition-all rounded-xl"
     :style="{ order }"
   >
     <template #header>
