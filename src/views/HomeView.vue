@@ -520,7 +520,7 @@ const nodeCardGridClass = computed(() => {
             </div>
           </div>
           <TabsContent v-for="g in groups" :key="g.name" :value="g.name" class="pointer-events-auto">
-            <div v-if="activeHomeTool !== 'nodes'" class="mb-4 rounded-lg bg-background/50 px-3 py-2 text-sm text-muted-foreground">
+            <div v-if="activeHomeTool !== 'nodes'" class="mb-4 rounded-md bg-background/50 px-3 py-2 text-sm text-muted-foreground">
               {{ activeToolTitle }} · 当前分组：{{ g.tab }}（{{ groupNodeList.length }} 台）
             </div>
             <NodeComparePanel v-if="activeHomeTool === 'nodeCompare'" :nodes="groupNodeList" />
