@@ -398,7 +398,7 @@ function onPointerUp(e: PointerEvent) {
     >
       <div v-if="onlineServers > 0" class="flex items-center gap-1">
         <span class="inline-block size-1.5 rounded-full bg-green-600 animate-pulse" />
-        <span class="text-green-600">{{ onlineServers }}</span>
+        <span class="text-[var(--status-ok)]">{{ onlineServers }}</span>
       </div>
       <div v-if="offlineServers > 0" class="flex items-center gap-1">
         <span class="inline-block size-1.5 rounded-full bg-yellow-600 animate-pulse" />

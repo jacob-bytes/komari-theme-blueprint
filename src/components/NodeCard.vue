@@ -225,7 +225,7 @@ function hasRegion(region: string | null | undefined): boolean {
           :content="nodeMessageTooltip"
           placement="top"
           as="span"
-          class="inline-flex shrink-0 text-amber-500"
+          class="inline-flex shrink-0 text-[var(--status-warn)]"
           content-class="w-56 whitespace-pre-line leading-snug text-left"
         >
           <Icon icon="tabler:alert-triangle-filled" width="14" height="14" aria-label="节点消息" />
@@ -238,8 +238,8 @@ function hasRegion(region: string | null | undefined): boolean {
       <div class="flex gap-1.5 items-center shrink-0">
         <button
           type="button"
-          class="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-slate-500/10 hover:text-amber-500"
-          :class="isFavorite && 'text-amber-500'"
+          class="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-slate-500/10 hover:text-[var(--status-warn)]"
+          :class="isFavorite && 'text-[var(--status-warn)]'"
           :aria-label="isFavorite ? `取消收藏 ${props.node.name}` : `收藏 ${props.node.name}`"
           :title="isFavorite ? '取消收藏' : '收藏节点'"
           @click.stop="toggleFavorite"
@@ -358,7 +358,7 @@ function hasRegion(region: string | null | undefined): boolean {
           <div class="flex flex-col gap-1">
             <div class="flex justify-between text-xs">
               <span class="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
-                <Icon :icon="NODE_METRIC_ICONS.disk" data-node-metric-icon="disk" width="13" height="13" class="shrink-0 text-orange-500" aria-hidden="true" />
+                <Icon :icon="NODE_METRIC_ICONS.disk" data-node-metric-icon="disk" width="13" height="13" class="shrink-0 text-[var(--status-load)]" aria-hidden="true" />
                 <span class="truncate">硬盘</span>
               </span>
               <span class="tabular-nums font-medium">{{ diskPercentage.toFixed(1) }}%</span>

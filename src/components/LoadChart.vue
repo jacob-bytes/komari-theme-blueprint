@@ -1584,7 +1584,7 @@ onMounted(() => {
         <TabsList class="h-8 bg-background/50 backdrop-blur-xl pointer-events-auto rounded-md" data-load-chart-range>
           <TabsTrigger
             v-for="view in availableViews" :key="view.label" :value="view.label"
-            class="h-6.5 text-xs border-none data-[state=active]:text-green-600 shadow-none rounded-sm"
+            class="h-6.5 text-xs border-none data-[state=active]:text-[var(--status-ok)] shadow-none rounded-sm"
           >
             {{ view.label }}
           </TabsTrigger>
@@ -1616,7 +1616,7 @@ onMounted(() => {
             应用
           </Button>
         </div>
-        <div v-if="customRangeError" class="text-[11px] text-orange-500">
+        <div v-if="customRangeError" class="text-[11px] text-[var(--status-load)]">
           {{ customRangeError }}
         </div>
       </div>
@@ -1624,7 +1624,7 @@ onMounted(() => {
 
     <!-- 内容区域 -->
     <Spinner :show="loading">
-      <div v-if="error" class="text-red-500 py-8 text-center">
+      <div v-if="error" class="text-[var(--status-alert)] py-8 text-center">
         {{ error }}
       </div>
       <div v-else-if="chartData.length === 0 && !loading" class="py-8">

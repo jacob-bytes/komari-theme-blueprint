@@ -759,7 +759,7 @@ onBeforeUnmount(() => {
           <TabsList class="w-max h-8 bg-background/50 backdrop-blur-xl rounded-md">
             <TabsTrigger
               v-for="view in availableViews" :key="view.label" :value="view.label"
-              class="h-6.5 flex-none shrink-0 text-xs border-none data-[state=active]:text-green-600 shadow-none rounded-sm"
+              class="h-6.5 flex-none shrink-0 text-xs border-none data-[state=active]:text-[var(--status-ok)] shadow-none rounded-sm"
             >
               {{ view.label }}
             </TabsTrigger>
@@ -769,14 +769,14 @@ onBeforeUnmount(() => {
         <div class="flex gap-2 items-center">
           <Button
             variant="ghost" size="xs" class="h-7 rounded-sm bg-background/50 hover:bg-background border-none"
-            :class="selectedTaskIds.length === tasks.length ? 'shadow-[0_0_0_2px] shadow-green-600/10 text-green-600' : ''"
+            :class="selectedTaskIds.length === tasks.length ? 'shadow-[0_0_0_2px] shadow-green-600/10 text-[var(--status-ok)]' : ''"
             @click="showAllTasks"
           >
             全选
           </Button>
           <Button
             variant="ghost" size="xs" class="h-7 rounded-sm bg-background/50 hover:bg-background border-none"
-            :class="!selectedTaskIds.length && 'shadow-[0_0_0_2px] shadow-green-600/10 text-green-600'"
+            :class="!selectedTaskIds.length && 'shadow-[0_0_0_2px] shadow-green-600/10 text-[var(--status-ok)]'"
             @click="hideAllTasks"
           >
             全不选
@@ -809,7 +809,7 @@ onBeforeUnmount(() => {
             应用
           </Button>
         </div>
-        <div v-if="customRangeError" class="text-[11px] text-orange-500">
+        <div v-if="customRangeError" class="text-[11px] text-[var(--status-load)]">
           {{ customRangeError }}
         </div>
         <div v-else-if="legacyCustomRangeFallback" class="text-[11px] text-muted-foreground">
@@ -820,7 +820,7 @@ onBeforeUnmount(() => {
 
     <!-- 内容区域 -->
     <Spinner :show="loading" content-class="flex flex-col gap-4">
-      <div v-if="error" class="text-red-500 py-8 text-center">
+      <div v-if="error" class="text-[var(--status-alert)] py-8 text-center">
         {{ error }}
       </div>
       <div v-else-if="tasks.length === 0 && !loading" class="py-8">
@@ -853,7 +853,7 @@ onBeforeUnmount(() => {
                     @update:open="(open) => setTaskTooltipOpen(task.id, open)"
                   >
                     <TooltipTrigger as-child>
-                      <Button variant="ghost" size="icon-xs" class="text-slate-500" @click.stop="toggleTaskTooltip(task.id)">
+                      <Button variant="ghost" size="icon-xs" class="text-muted-foreground" @click.stop="toggleTaskTooltip(task.id)">
                         <Icon icon="carbon:information" :width="14" :height="14" />
                       </Button>
                     </TooltipTrigger>
@@ -933,7 +933,7 @@ onBeforeUnmount(() => {
             <div class="flex gap-2 items-center">
               <Button
                 variant="ghost" size="xs" class="h-7 rounded-sm bg-background/50 hover:bg-background border-none"
-                :class="cutPeak && 'shadow-[0_0_0_2px] shadow-green-600/10 text-green-600'" @click="cutPeak = !cutPeak"
+                :class="cutPeak && 'shadow-[0_0_0_2px] shadow-green-600/10 text-[var(--status-ok)]'" @click="cutPeak = !cutPeak"
               >
                 平滑峰值
               </Button>
@@ -942,7 +942,7 @@ onBeforeUnmount(() => {
                 @update:open="(open) => smoothInfoTooltipOpen = open"
               >
                 <TooltipTrigger as-child>
-                  <Button variant="ghost" size="icon-xs" class="text-slate-500" @click.stop="toggleSmoothInfoTooltip">
+                  <Button variant="ghost" size="icon-xs" class="text-muted-foreground" @click.stop="toggleSmoothInfoTooltip">
                     <Icon icon="carbon:information" :width="14" :height="14" />
                   </Button>
                 </TooltipTrigger>

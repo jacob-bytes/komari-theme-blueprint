@@ -110,9 +110,9 @@ const cpuBenchmarkTierPercent = computed(() => ({ 'S': 92, 'A': 76, 'B': 58, 'C'
 const cpuBenchmarkTierTextClass = computed(() => ({
   'S': 'text-yellow-500',
   'A': 'text-blue-500',
-  'B': 'text-green-500',
-  'C': 'text-orange-500',
-  'D': 'text-red-400',
+  'B': 'text-[var(--status-ok)]',
+  'C': 'text-[var(--status-load)]',
+  'D': 'text-[var(--status-alert)]',
   '?': 'text-muted-foreground',
 }[cpuBenchmarkRating.value.tier]))
 const cpuBenchmarkTierBarClass = computed(() => ({
@@ -278,7 +278,7 @@ const remainingTimeValueClass = computed(() => {
   if (status === 'expired' || status === 'critical')
     return 'text-destructive'
   if (status === 'warning')
-    return 'text-orange-600 dark:text-orange-400'
+    return 'text-[var(--status-load)] dark:text-[var(--status-load)]'
   if (status === 'long_term')
     return 'text-muted-foreground'
   return 'text-emerald-600 dark:text-emerald-400'
@@ -527,7 +527,7 @@ async function copyText(value: string): Promise<void> {
           <Button
             variant="ghost" size="icon-sm"
             class="size-7 rounded-sm shadow-none"
-            :class="isFavoriteNode && 'text-amber-500'"
+            :class="isFavoriteNode && 'text-[var(--status-warn)]'"
             :aria-label="isFavoriteNode ? '取消收藏当前节点' : '收藏当前节点'"
             :title="isFavoriteNode ? '取消收藏' : '收藏节点'"
             @click="toggleCurrentFavorite"
@@ -606,7 +606,7 @@ async function copyText(value: string): Promise<void> {
           <div :title="item.tooltip" class="flex h-full min-h-10 md:min-h-18 flex-col justify-between gap-3">
             <div class="flex items-center justify-between gap-2">
               <span class="text-xs font-medium tracking-wider text-muted-foreground">{{ item.label }}</span>
-              <Icon :icon="item.icon" :width="20" :height="20" class="text-slate-500/25 transition-colors group-hover:text-slate-500" />
+              <Icon :icon="item.icon" :width="20" :height="20" class="text-muted-foreground/25 transition-colors group-hover:text-muted-foreground" />
             </div>
             <div class="min-w-0 space-y-1">
               <div class="flex min-w-0 items-baseline gap-1 truncate font-semibold leading-none" :class="item.valueClass">
@@ -766,7 +766,7 @@ async function copyText(value: string): Promise<void> {
                 <span class="text-xs sm:text-sm break-all">{{ trafficUsageText }}</span>
                 <span v-if="hasPeak" class="text-[10px] text-muted-foreground/80 flex items-center gap-2 leading-none">
                   <span>近一天峰值</span>
-                  <span class="text-green-600 flex items-center gap-0.5">
+                  <span class="text-[var(--status-ok)] flex items-center gap-0.5">
                     <Icon icon="tabler:chevron-up" width="10" height="10" />{{ formatBytesPerSecond(peakNetOut) }}
                   </span>
                   <span class="text-blue-600 flex items-center gap-0.5">

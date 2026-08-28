@@ -440,8 +440,8 @@ function buildNodeMetadataItems(node: NodeData): NodeMetadataItem[] {
                     <span class="truncate">{{ node.name }}</span>
                     <button
                       type="button"
-                      class="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-slate-500/10 hover:text-amber-500"
-                      :class="appStore.isFavoriteNode(node.uuid) && 'text-amber-500'"
+                      class="inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:bg-slate-500/10 hover:text-[var(--status-warn)]"
+                      :class="appStore.isFavoriteNode(node.uuid) && 'text-[var(--status-warn)]'"
                       :aria-label="appStore.isFavoriteNode(node.uuid) ? `取消收藏 ${node.name}` : `收藏 ${node.name}`"
                       :title="appStore.isFavoriteNode(node.uuid) ? '取消收藏' : '收藏节点'"
                       @click.stop="toggleFavorite(node)"
@@ -454,7 +454,7 @@ function buildNodeMetadataItems(node: NodeData): NodeMetadataItem[] {
                       :content="getNodeMessageTooltip(node)"
                       placement="top"
                       as="span"
-                      class="inline-flex shrink-0 text-amber-500"
+                      class="inline-flex shrink-0 text-[var(--status-warn)]"
                       content-class="w-56 whitespace-pre-line leading-snug text-left"
                     >
                       <Icon icon="tabler:alert-triangle-filled" width="13" height="13" aria-label="节点消息" />

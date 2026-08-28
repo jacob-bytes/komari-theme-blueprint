@@ -228,7 +228,7 @@ function sortMark(key: SortKey): string {
     <div v-if="bestRows.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       <CardX v-for="row in bestRows" :key="row.key" size="small" class="border-none bg-background/50">
         <div class="flex items-start gap-2">
-          <Icon icon="tabler:trophy" width="18" height="18" class="mt-0.5 text-amber-500" />
+          <Icon icon="tabler:trophy" width="18" height="18" class="mt-0.5 text-[var(--status-warn)]" />
           <div class="min-w-0 flex-1">
             <div class="truncate text-sm font-semibold">
               {{ row.node.name }}
@@ -237,7 +237,7 @@ function sortMark(key: SortKey): string {
               {{ row.provider }} · {{ formatRankValue(row, sortKey) }}
             </div>
           </div>
-          <Badge v-if="row.trafficBytes <= 0" variant="outline" class="rounded-md text-[11px] text-orange-500 border-orange-500/30">
+          <Badge v-if="row.trafficBytes <= 0" variant="outline" class="rounded-md text-[11px] text-[var(--status-load)] border-orange-500/30">
             无流量配额
           </Badge>
         </div>
@@ -291,7 +291,7 @@ function sortMark(key: SortKey): string {
                 {{ row.node.name }}
               </div>
               <div class="mt-1 flex flex-wrap gap-1">
-                <Badge v-if="row.trafficBytes <= 0" variant="outline" class="rounded-md text-[11px] text-orange-500 border-orange-500/30">
+                <Badge v-if="row.trafficBytes <= 0" variant="outline" class="rounded-md text-[11px] text-[var(--status-load)] border-orange-500/30">
                   无流量配额
                 </Badge>
               </div>

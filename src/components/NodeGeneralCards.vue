@@ -839,7 +839,7 @@ onMounted(async () => {
             <span class="text-xs font-medium tracking-wider text-muted-foreground truncate">{{ card.label }}</span>
             <Icon
               :icon="card.icon" :width="20" :height="20"
-              class="shrink-0 text-slate-500/20 group-hover:text-slate-500 transition-colors"
+              class="shrink-0 text-muted-foreground/20 group-hover:text-muted-foreground transition-colors"
             />
           </div>
           <DataTooltip
