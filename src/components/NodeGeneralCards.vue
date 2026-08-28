@@ -79,7 +79,6 @@ const financeDetailsOpen = ref(false)
 const currentTime = useNow({ interval: 1000 })
 const summaryNodes = computed(() => props.nodes ?? nodesStore.visibleNodes)
 const summaryTransitionKey = computed(() => props.transitionKey ?? nodesStore.visibleNodes.length)
-const globeOnlineCount = computed(() => summaryNodes.value.filter(n => n.online).length)
 const globeOfflineCount = computed(() => summaryNodes.value.filter(n => !n.online).length)
 const metricSwitchTransitionProps = computed(() => ({
   ...(appStore.disablePageAnimation
