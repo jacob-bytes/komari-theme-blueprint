@@ -174,7 +174,7 @@ const DEFAULT_GENERAL_CARD_ENABLED: Record<GeneralCardKey, boolean> = {
   uploadSpeed: true,
   downloadSpeed: true,
   netSpeed: true,
-  onlineNodes: false,
+  onlineNodes: true,
   avgCpu: false,
   avgGpu: false,
   avgLoad: false,
