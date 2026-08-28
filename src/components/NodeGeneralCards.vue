@@ -79,6 +79,8 @@ const financeDetailsOpen = ref(false)
 const currentTime = useNow({ interval: 1000 })
 const summaryNodes = computed(() => props.nodes ?? nodesStore.visibleNodes)
 const summaryTransitionKey = computed(() => props.transitionKey ?? nodesStore.visibleNodes.length)
+const globeOnlineCount = computed(() => summaryNodes.value.filter(n => n.online).length)
+const globeOfflineCount = computed(() => summaryNodes.value.filter(n => !n.online).length)
 const metricSwitchTransitionProps = computed(() => ({
   ...(appStore.disablePageAnimation
     ? { css: false }
@@ -468,6 +470,15 @@ function getCardDefinition(key: GeneralCardKey): GeneralMetricCard {
         unit: totalTrafficTooltip.value.unit,
         tooltip: `↑ ${formattedTrafficUp.value.value} ${formattedTrafficUp.value.unit}\n↓ ${formattedTrafficDown.value.value} ${formattedTrafficDown.value.unit}`,
       }
+    case 'netSpeed':
+      return {
+        key: 'netSpeed',
+        label: '实时速率',
+        icon: 'tabler:arrows-exchange',
+        value: `↑${formattedSpeedUp.value.value}`,
+        unit: `KB/s · ↓${formattedSpeedDown.value.value} ${formattedSpeedDown.value.unit}`,
+        tooltip: `上行 ${formattedSpeedUp.value.value} ${formattedSpeedUp.value.unit} · 下行 ${formattedSpeedDown.value.value} ${formattedSpeedDown.value.unit}`,
+      }
     case 'uploadSpeed':
       return {
         key: 'uploadSpeed',
@@ -809,16 +820,29 @@ onMounted(async () => {
 
 <template>
   <div v-if="shouldRenderHeader" :class="wrapperClass">
-    <NodeEarthCobeGlobe
-      v-if="showEarth && appStore.earthRenderer !== 'line-grid'"
-      :nodes="globeNodes"
-      :class="earthClass"
-    />
-    <NodeEarthLineGridGlobe
-      v-else-if="showEarth"
-      :nodes="globeNodes"
-      :class="earthClass"
-    />
+    <div v-if="showEarth" class="relative" :class="[earthClass]">
+      <div
+        v-if="summaryNodes.length > 0"
+        class="absolute top-6 md:top-12 left-0 z-10 text-[10px] text-muted-foreground pointer-events-none flex gap-2 items-center bg-background/85 shadow-sm ring-1 ring-border/60 rounded px-2 py-0.5"
+      >
+        <div v-if="globeOnlineCount > 0" class="flex items-center gap-1">
+          <span class="inline-block size-1.5 rounded-full bg-green-600 animate-pulse" />
+          <span class="text-[var(--status-ok)]">{{ globeOnlineCount }}</span>
+        </div>
+        <div v-if="globeOfflineCount > 0" class="flex items-center gap-1">
+          <span class="inline-block size-1.5 rounded-full bg-yellow-600 animate-pulse" />
+          <span class="text-[var(--status-warn)]">{{ globeOfflineCount }}</span>
+        </div>
+      </div>
+      <NodeEarthCobeGlobe
+        v-if="appStore.earthRenderer !== 'line-grid'"
+        :nodes="globeNodes"
+      />
+      <NodeEarthLineGridGlobe
+        v-else
+        :nodes="globeNodes"
+      />
+    </div>
 
     <div v-if="visibleCards.length > 0" :class="cardGridClass">
       <CardX

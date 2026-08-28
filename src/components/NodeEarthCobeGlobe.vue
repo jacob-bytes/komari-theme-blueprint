@@ -81,9 +81,6 @@ function shouldKeepStaticRedraw(): boolean {
 
 const {
   regionClusters,
-  totalServers,
-  onlineServers,
-  offlineServers,
   clusterKey,
 } = useNodeGeoClusters({ nodes: () => props.nodes })
 
@@ -391,20 +388,6 @@ function onPointerUp(e: PointerEvent) {
         :src="`/images/flags/${label.code}.svg`" :alt="label.code"
         class="block size-5 rounded-[0.18rem] shadow-[0_8px_20px_rgb(15_23_42/0.24)]"
       >
-    </div>
-
-    <div
-      v-if="totalServers > 0"
-      class="absolute top-6 md:top-12 left-0 text-[10px] text-muted-foreground pointer-events-none flex gap-2 items-center bg-background/85 shadow-sm ring-1 ring-border/60 rounded px-2 py-0.5"
-    >
-      <div v-if="onlineServers > 0" class="flex items-center gap-1">
-        <span class="inline-block size-1.5 rounded-full bg-green-600 animate-pulse" />
-        <span class="text-[var(--status-ok)]">{{ onlineServers }}</span>
-      </div>
-      <div v-if="offlineServers > 0" class="flex items-center gap-1">
-        <span class="inline-block size-1.5 rounded-full bg-yellow-600 animate-pulse" />
-        <span class="text-yellow-600">{{ offlineServers }}</span>
-      </div>
     </div>
   </div>
 </template>

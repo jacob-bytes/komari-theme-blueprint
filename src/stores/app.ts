@@ -16,6 +16,7 @@ export type GeneralCardKey
     | 'totalTraffic'
     | 'uploadSpeed'
     | 'downloadSpeed'
+    | 'netSpeed'
     | 'onlineNodes'
     | 'avgCpu'
     | 'avgGpu'
@@ -121,10 +122,11 @@ const BYTE_DECIMALS: ByteDecimalsConfig = {
 const DEFAULT_GENERAL_CARD_ORDER: GeneralCardKey[] = [
   'memory',
   'disk',
+  'netSpeed',
   'remainingValue',
   'totalTraffic',
-  'uploadSpeed',
-  'downloadSpeed',
+  'avgCpu',
+  'avgLoad',
 ]
 
 const ALL_GENERAL_CARD_KEYS = [
@@ -136,6 +138,7 @@ const ALL_GENERAL_CARD_KEYS = [
   'totalTraffic',
   'uploadSpeed',
   'downloadSpeed',
+  'netSpeed',
   'onlineNodes',
   'offlineNodes',
   'avgCpu',
@@ -169,6 +172,7 @@ const DEFAULT_GENERAL_CARD_ENABLED: Record<GeneralCardKey, boolean> = {
   totalTraffic: true,
   uploadSpeed: true,
   downloadSpeed: true,
+  netSpeed: true,
   onlineNodes: false,
   avgCpu: false,
   avgGpu: false,
