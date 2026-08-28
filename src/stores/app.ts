@@ -21,6 +21,7 @@ export type GeneralCardKey
     | 'avgCpu'
     | 'avgGpu'
     | 'avgLoad'
+    | 'systemLoad'
     | 'swap'
     | 'processes'
     | 'connections'
@@ -125,8 +126,7 @@ const DEFAULT_GENERAL_CARD_ORDER: GeneralCardKey[] = [
   'netSpeed',
   'remainingValue',
   'totalTraffic',
-  'avgCpu',
-  'avgLoad',
+  'systemLoad',
 ]
 
 const ALL_GENERAL_CARD_KEYS = [
@@ -144,6 +144,7 @@ const ALL_GENERAL_CARD_KEYS = [
   'avgCpu',
   'avgGpu',
   'avgLoad',
+  'systemLoad',
   'swap',
   'processes',
   'connections',
@@ -177,6 +178,7 @@ const DEFAULT_GENERAL_CARD_ENABLED: Record<GeneralCardKey, boolean> = {
   avgCpu: false,
   avgGpu: false,
   avgLoad: false,
+  systemLoad: true,
   swap: false,
   processes: false,
   connections: false,
@@ -209,6 +211,7 @@ const LEGACY_GENERAL_CARD_SETTING_KEYS: Partial<Record<GeneralCardKey, string>> 
   onlineNodes: 'generalCardOnlineNodesEnabled',
   avgCpu: 'generalCardAvgCpuEnabled',
   avgLoad: 'generalCardAvgLoadEnabled',
+  systemLoad: 'generalCardSystemLoadEnabled',
   swap: 'generalCardSwapEnabled',
   processes: 'generalCardProcessesEnabled',
   connections: 'generalCardConnectionsEnabled',
@@ -931,10 +934,10 @@ const useAppStore = defineStore('app', () => {
 
   const generalCardEnabledMap = computed<Record<GeneralCardKey, boolean>>(() => {
     const settings = themeSettings.value
-    const enabledMap = { ...DEFAULT_GENERAL_CARD_ENABLED }
+    const enabledMap: Record<GeneralCardKey, boolean> = { ...DEFAULT_GENERAL_CARD_ENABLED }
 
     for (const key of ALL_GENERAL_CARD_KEYS) {
-      const settingKey = LEGACY_GENERAL_CARD_SETTING_KEYS[key]
+      const settingKey = LEGACY_GENERAL_CARD_SETTING_KEYS[key] as string | undefined
       if (!settingKey)
         continue
 
@@ -970,13 +973,6 @@ const useAppStore = defineStore('app', () => {
       return parseKeyList(settings.generalCardKeys, isGeneralCardKey, DEFAULT_GENERAL_CARD_ORDER)
 
     const orderedKeys = parseKeyList(settings.generalCardOrder, isGeneralCardKey, DEFAULT_GENERAL_CARD_ORDER)
-    const orderedKeySet = new Set<GeneralCardKey>(orderedKeys)
-    for (const key of ALL_GENERAL_CARD_KEYS) {
-      if (orderedKeySet.has(key))
-        continue
-      orderedKeys.push(key)
-      orderedKeySet.add(key)
-    }
 
     return orderedKeys.filter(key => generalCardEnabledMap.value[key])
   })

@@ -479,6 +479,15 @@ function getCardDefinition(key: GeneralCardKey): GeneralMetricCard {
         unit: `KB/s · ↓${formattedSpeedDown.value.value} ${formattedSpeedDown.value.unit}`,
         tooltip: `上行 ${formattedSpeedUp.value.value} ${formattedSpeedUp.value.unit} · 下行 ${formattedSpeedDown.value.value} ${formattedSpeedDown.value.unit}`,
       }
+    case 'systemLoad':
+      return {
+        key: 'systemLoad',
+        label: '平均态势',
+        icon: 'tabler:gauge',
+        value: formatDecimal(avgCpu.value),
+        unit: `% · 负载 ${formatDecimal(avgLoad.value)}`,
+        tooltip: `全群平均 CPU ${formatDecimal(avgCpu.value)}% · 平均负载 ${formatDecimal(avgLoad.value)}`,
+      }
     case 'uploadSpeed':
       return {
         key: 'uploadSpeed',
