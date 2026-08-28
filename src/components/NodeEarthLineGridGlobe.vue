@@ -81,11 +81,6 @@ const svg = computed(() => {
   }
 
   if (pts.length) {
-    for (const item of pts) {
-      const fade = Math.min(1, Math.max(0, (item.point.z - 0.02) * 3.5)).toFixed(2)
-      s.push(`<circle cx="${item.point.x.toFixed(1)}" cy="${item.point.y.toFixed(1)}" r="3" fill="${color.point}" stroke="${color.rim}" stroke-width="0.8" opacity="${fade}"/>`)
-    }
-
     const rows = layoutLabels(pts.map(item => ({
       name: item.name,
       point: item.point,
@@ -94,9 +89,13 @@ const svg = computed(() => {
 
     for (const row of rows) {
       const fade = Math.min(1, Math.max(0, (row.z - 0.02) * 3.5)).toFixed(2)
-      s.push(`<polyline points="${row.dotX.toFixed(1)},${row.dotY.toFixed(1)} ${row.bendX},${row.dotY.toFixed(1)} ${row.anchorX},${row.textY}" fill="none" stroke="${color.grid}" stroke-width="0.7" stroke-dasharray="3 3" opacity="${fade}"/>`)
       const anchor = row.side === 'left' ? 'end' : 'start'
+      // 每行一个 callout 分组：节点点 + 折线引线 + 标签文本（hover 联动高亮）
+      s.push(`<g class="globe-callout" tabindex="0" role="button" aria-label="${esc(row.name)}">`)
+      s.push(`<circle cx="${row.dotX.toFixed(1)}" cy="${row.dotY.toFixed(1)}" r="3" fill="${color.point}" stroke="${color.rim}" stroke-width="0.8" opacity="${fade}"/>`)
+      s.push(`<polyline points="${row.dotX.toFixed(1)},${row.dotY.toFixed(1)} ${row.bendX},${row.dotY.toFixed(1)} ${row.anchorX},${row.textY}" fill="none" stroke="${color.grid}" stroke-width="0.7" stroke-dasharray="3 3" opacity="${fade}"/>`)
       s.push(`<text x="${row.anchorX}" y="${row.textY + 4}" font-size="11" fill="${color.text}" text-anchor="${anchor}" font-weight="600" opacity="${fade}">${esc(row.name)}</text>`)
+      s.push(`</g>`)
     }
   }
 

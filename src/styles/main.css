@@ -56,6 +56,11 @@
   --globe-coast: rgb(29 78 137 / 0.85);
   --globe-point: #1d4e89;
   --globe-text: #1d4e89;
+  /* 状态语义色（默认与原 Tailwind 值一致，零视觉变化） */
+  --status-ok: #16a34a;
+  --status-warn: #f59e0b;
+  --status-load: #f97316;
+  --status-alert: #ef4444;
 }
 
 /* ===== blueprint 主题 · 晒图蓝（dark）设计令牌 ===== */
@@ -244,6 +249,11 @@ html.color-vision-friendly {
   --signal-3: #009e73;
   --signal-4: #e69f00;
   --signal-5: #d55e00;
+  /* 色觉友好：状态色跟随 signal 语义（OK=蓝绿 / warn=橙 / load=朱红 / alert=紫红） */
+  --status-ok: #009e73;
+  --status-warn: #e69f00;
+  --status-load: #d55e00;
+  --status-alert: #cc79a7;
 }
 
 html.color-vision-friendly.dark {
@@ -387,6 +397,28 @@ header {
   background-color: color-mix(in srgb, var(--card) 20%, transparent) !important;
   backdrop-filter: blur(16px) saturate(150%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
+}
+
+/* 线状地球标签 hover 联动高亮（纯视觉） */
+.globe-callout {
+  cursor: pointer;
+}
+.globe-callout text {
+  transition: fill 0.15s ease;
+}
+.globe-callout:hover text,
+.globe-callout:focus-visible text {
+  fill: var(--globe-point);
+  font-weight: 700;
+}
+.globe-callout:hover polyline,
+.globe-callout:focus-visible polyline {
+  stroke: var(--globe-point);
+  stroke-opacity: 0.9;
+}
+.globe-callout:hover circle,
+.globe-callout:focus-visible circle {
+  stroke-width: 1.4;
 }
 
 html.legacy-webkit .glass-header {

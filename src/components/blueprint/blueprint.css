@@ -134,22 +134,6 @@
   font-weight: 700;
 }
 
-/* ---- 图例 ---- */
-.bp-root .bp-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 22px;
-  margin: 12px 0 4px;
-  font-size: 10.5px;
-  color: var(--bp-faint);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.bp-root .bp-legend svg {
-  vertical-align: -2px;
-  margin-right: 5px;
-}
-
 /* ---- 拓扑总图容器 ---- */
 .bp-root .bp-ga-wrap {
   overflow-x: auto;
@@ -249,6 +233,11 @@
   border-bottom: 1px solid var(--bp-ink);
   padding: 7px 8px;
 }
+/* 设备表斑马纹（隔行淡底色，图纸表格观感） */
+.bp-root table.bp-sched tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--bp-ghost) 35%, transparent);
+}
+
 .bp-root table.bp-sched td {
   padding: 7px 8px;
   border-bottom: 1px solid var(--bp-ghost);
