@@ -197,7 +197,7 @@ function hasRegion(region: string | null | undefined): boolean {
     hoverable
     :size="nodeCardXSize"
     :content-class="nodeCardContentPaddingClass"
-    class="node-card w-full cursor-pointer border-none shadow-[0_0_0_3px] shadow-transparent transition-all duration-200 rounded-md"
+    class="node-card w-full cursor-pointer border-none shadow-[0_0_0_3px] shadow-transparent transition-all duration-200 rounded-xl"
     :class="[!props.node.online && '!shadow-destructive/30']"
     role="button"
     tabindex="0"
@@ -247,9 +247,10 @@ function hasRegion(region: string | null | undefined): boolean {
         >
           <Icon :icon="isFavorite ? 'tabler:star-filled' : 'tabler:star'" width="14" height="14" />
         </button>
-        <img :src="getOSImage(props.node.os)" :alt="getOSName(props.node.os)" class="size-4">
+        <img loading="lazy" :src="getOSImage(props.node.os)" :alt="getOSName(props.node.os)" class="size-4">
         <img
           v-if="hasRegion(props.node.region)"
+          loading="lazy"
           :src="`/images/flags/${getRegionCode(props.node.region)}.svg`"
           :alt="getRegionAltText(props.node.region)"
           class="size-5 shrink-0"
@@ -396,7 +397,7 @@ function hasRegion(region: string | null | undefined): boolean {
         <!-- 三列：网速 / 总流量 / 剩余天数+价格或负载 -->
         <div class="grid gap-1.5" :class="nodeCardMetricGridClass">
           <!-- 实时网速 -->
-          <div class="flex flex-col gap-0.5 rounded-md bg-slate-500/5 min-w-0 overflow-hidden" :class="nodeCardMetricBoxClass">
+          <div class="flex flex-col gap-0.5 rounded-lg bg-slate-500/5 min-w-0 overflow-hidden" :class="nodeCardMetricBoxClass">
             <div class="text-[11px] text-success flex items-center gap-1">
               <Icon icon="tabler:chevron-up" width="11" height="11" />
               <span class="truncate min-w-0 overflow-hidden">{{ formatBytesPerSecond(props.node.net_out ?? 0) }}</span>
@@ -408,7 +409,7 @@ function hasRegion(region: string | null | undefined): boolean {
           </div>
 
           <!-- 总流量 -->
-          <div class="flex flex-col gap-0.5 rounded-md bg-slate-500/5 min-w-0 overflow-hidden" :class="nodeCardMetricBoxClass">
+          <div class="flex flex-col gap-0.5 rounded-lg bg-slate-500/5 min-w-0 overflow-hidden" :class="nodeCardMetricBoxClass">
             <div class="text-[11px] text-muted-foreground flex items-center gap-1">
               <Icon icon="tabler:upload" width="11" height="11" />
               <span class="truncate min-w-0 overflow-hidden">{{ formatBytes(props.node.net_total_up ?? 0) }}</span>
@@ -420,7 +421,7 @@ function hasRegion(region: string | null | undefined): boolean {
           </div>
 
           <!-- 第三列：有价格显示剩余天数+价格，否则显示负载 -->
-          <div class="flex flex-col gap-0.5 rounded-md bg-slate-500/5 min-w-0 overflow-hidden" :class="nodeCardMetricBoxClass">
+          <div class="flex flex-col gap-0.5 rounded-lg bg-slate-500/5 min-w-0 overflow-hidden" :class="nodeCardMetricBoxClass">
             <template v-if="remainingInfoTags.length">
               <div
                 v-for="(item, i) in remainingInfoTags" :key="i"
@@ -451,7 +452,7 @@ function hasRegion(region: string | null | undefined): boolean {
         <div class="grid grid-cols-2 gap-1.5">
           <button
             type="button"
-            class="group/panel relative flex flex-col rounded-md bg-slate-500/5"
+            class="group/panel relative flex flex-col rounded-lg bg-slate-500/5"
             :class="[nodeCardPingPanelClass, nodeCardPanelClass, !props.node.online ? 'blur-xs opacity-50' : '']"
             :title="latencyPanelTooltip"
             :aria-label="`${props.node.name} 延迟监测`"
@@ -480,7 +481,7 @@ function hasRegion(region: string | null | undefined): boolean {
 
           <button
             type="button"
-            class="group/panel relative flex flex-col rounded-md bg-slate-500/5"
+            class="group/panel relative flex flex-col rounded-lg bg-slate-500/5"
             :class="[nodeCardPingPanelClass, nodeCardPanelClass, !props.node.online ? 'blur-xs opacity-50' : '']"
             :title="lossPanelTooltip"
             :aria-label="`${props.node.name} 丢包监测`"
@@ -522,7 +523,7 @@ function hasRegion(region: string | null | undefined): boolean {
         <!-- 离线遮罩 -->
         <div
           v-if="!props.node.online"
-          class="absolute inset-0 flex flex-col items-center justify-center z-10 rounded-md bg-white/20 dark:bg-black/20 backdrop-blur-[2px]"
+          class="absolute inset-0 flex flex-col items-center justify-center z-10 rounded-xl bg-white/20 dark:bg-black/20 backdrop-blur-[2px]"
         >
           <div class="text-sm font-semibold text-destructive">
             离线

@@ -27,7 +27,7 @@ const emit = defineEmits<{
     <DialogPortal>
       <DialogOverlay class="fixed inset-0 z-100 bg-black/45 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
       <DialogContent
-        class="fixed left-1/2 top-1/2 z-101 flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-md border border-border/70 bg-card/95 text-card-foreground shadow-2xl backdrop-blur-xl focus:outline-none"
+        class="fixed left-1/2 top-1/2 z-101 flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border/70 bg-card/95 text-card-foreground shadow-2xl backdrop-blur-xl focus:outline-none"
         :class="contentClass"
       >
         <div class="flex items-start gap-3 border-b border-border/60 px-4 py-3 sm:px-5">

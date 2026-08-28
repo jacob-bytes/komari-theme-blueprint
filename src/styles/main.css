@@ -424,3 +424,9 @@ header {
 html.legacy-webkit .glass-header {
   background-color: color-mix(in srgb, var(--card) 88%, white) !important;
 }
+
+/* 键盘焦点可见环（无障碍） */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

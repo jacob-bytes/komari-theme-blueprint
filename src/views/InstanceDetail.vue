@@ -507,7 +507,7 @@ async function copyText(value: string): Promise<void> {
           <Icon icon="tabler:arrow-left" :width="16" :height="16" />
         </Button>
         <div class="min-w-0 text-lg font-bold flex gap-2 items-center">
-          <img :src="`/images/flags/${getRegionCode(data.region)}.svg`" :alt="getRegionAltText(data.region)" class="size-6">
+          <img loading="lazy" :src="`/images/flags/${getRegionCode(data.region)}.svg`" :alt="getRegionAltText(data.region)" class="size-6">
           <span class="truncate">{{ data.name }}</span>
         </div>
         <Badge :variant="data.online ? 'default' : 'destructive'" class="text-xs !rounded flex items-center gap-1.5">
@@ -702,7 +702,7 @@ async function copyText(value: string): Promise<void> {
                 <span class="text-xs sm:text-sm">{{ item.label }}</span>
               </div>
               <div class="flex min-w-0 gap-2 items-center">
-                <img v-if="item.label === '操作系统'" :src="getOSImage(data.os)" :alt="getOSName(data.os)" class="size-5 shrink-0">
+                <img v-if="item.label === '操作系统'" loading="lazy" :src="getOSImage(data.os)" :alt="getOSName(data.os)" class="size-5 shrink-0">
                 <span class="text-xs sm:text-sm break-words">{{ item.value }}</span>
                 <button
                   v-if="item.label === '内核版本'" type="button"
