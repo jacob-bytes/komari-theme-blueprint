@@ -729,8 +729,8 @@ const cardGridClass = computed(() => {
     return 'col-span-12 row-start-1 z-9 grid grid-cols-12 auto-rows-[4.75rem] sm:auto-rows-[5rem] md:auto-rows-[5.8rem] gap-2 sm:gap-3'
 
   return hasExtraCards.value
-    ? 'h-auto -mt-20 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 auto-rows-[5rem] md:auto-rows-[7rem] gap-2'
-    : 'h-42 -mt-20 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 grid-rows-2 gap-2'
+    ? 'h-auto mt-0 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 auto-rows-[5rem] md:auto-rows-[7rem] gap-2'
+    : 'h-42 mt-0 md:mt-0 col-span-12 row-start-3 z-9 md:h-auto md:col-span-6 md:row-start-1 grid grid-cols-12 grid-rows-2 gap-2'
 })
 const cardClass = 'group relative z-10 h-full bg-card/75 backdrop-blur-sm md:bg-card md:backdrop-blur-none border-border hover:bg-secondary transition-all'
 const cardPositionClasses = [

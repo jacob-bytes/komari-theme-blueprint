@@ -18,9 +18,9 @@ const elementVisible = useElementVisibility(containerRef)
 const shouldRender = computed(() => documentVisibility.value === 'visible' && elementVisible.value)
 const shouldAutoRotate = computed(() => !appStore.stopEarth)
 
-const VIEW_W = 560
+const VIEW_W = 500
 const VIEW_H = 272
-const CX = 280
+const CX = 250
 const CY = 130
 const R = 130
 
@@ -211,7 +211,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="containerRef" class="line-globe-host relative h-full w-full min-h-56 select-none touch-none">
+  <div ref="containerRef" class="line-globe-host relative h-full w-full min-h-54 select-none touch-none">
     <svg
       :viewBox="`0 0 ${VIEW_W} ${VIEW_H}`"
       class="line-globe-svg absolute inset-0 h-full w-full"
