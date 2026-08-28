@@ -126,7 +126,7 @@ const DEFAULT_GENERAL_CARD_ORDER: GeneralCardKey[] = [
   'netSpeed',
   'remainingValue',
   'totalTraffic',
-  'systemLoad',
+  'onlineNodes',
 ]
 
 const ALL_GENERAL_CARD_KEYS = [
